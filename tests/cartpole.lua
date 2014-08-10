@@ -37,8 +37,7 @@ function CartController:init()
 	self:reset()
 end
 function CartController:reset()
-	self.curState = 1
-	self.qnn.lastAction = 0
+	self.firstMove = true
 end
 
 --[[
@@ -90,29 +89,16 @@ local function getState(x, dx_dt, theta, dtheta_dt)
 		+ 1 	-- +1 for lua
 end
 
-function CartController:getAction(x, dx_dt, theta, dtheta_dt, reinforcement)
-	local prevState = self.curState
-	self.curState = getState(x, dx_dt, theta, dtheta_dt)
-	
-	local predictedValue
-	if self.qnn.lastAction ~= 0 then
-		if self.curState == 0 then
-			predictedValue = 0
-		elseif self.qnn.nn.w[1][1][self.curState] <= self.qnn.nn.w[1][2][self.curState] then
-			predictedValue = self.qnn.nn.w[1][2][self.curState]
-		else
-			predictedValue = self.qnn.nn.w[1][1][self.curState]
-		end
-		
-		local alpha = .5
-		local gamma = .999
-		self.qnn.nn.w[1][self.qnn.lastAction][prevState]
-		= self.qnn.nn.w[1][self.qnn.lastAction][prevState]
-		 + alpha * (reinforcement + gamma * predictedValue - self.qnn.nn.w[1][self.qnn.lastAction][prevState]) 
-	end
+function CartController:getAction(x, dx_dt, theta, dtheta_dt, reward)
+	local state = getState(x, dx_dt, theta, dtheta_dt)
 
-	-- this routine retains qnn.lastAction
-	return self.qnn:determineAction(self.curState)
+	-- don't apply rewards until we have a previous state/action on file
+	if not self.firstMove then
+		self.qnn:applyReward(state, reward)
+	end
+	self.firstMove = false
+
+	return self.qnn:determineAction(state)
 end
 
 local Cart = class()

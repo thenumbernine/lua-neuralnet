@@ -38,9 +38,7 @@ function CartController:init()
 end
 function CartController:reset()
 	self.curState = 1
-	self.prevState = 1
-	self.curAction = 0
-	self.prevAction = 0
+	self.qnn.lastAction = 0
 end
 
 --[[
@@ -93,12 +91,11 @@ local function getState(x, dx_dt, theta, dtheta_dt)
 end
 
 function CartController:getAction(x, dx_dt, theta, dtheta_dt, reinforcement)
-	self.prevState = self.curState
-	self.prevAction = self.curAction
+	local prevState = self.curState
 	self.curState = getState(x, dx_dt, theta, dtheta_dt)
 	
 	local predictedValue
-	if self.prevAction ~= 0 then
+	if self.qnn.lastAction ~= 0 then
 		if self.curState == 0 then
 			predictedValue = 0
 		elseif self.qnn.nn.w[1][1][self.curState] <= self.qnn.nn.w[1][2][self.curState] then
@@ -109,22 +106,13 @@ function CartController:getAction(x, dx_dt, theta, dtheta_dt, reinforcement)
 		
 		local alpha = .5
 		local gamma = .999
-		self.qnn.nn.w[1][self.prevAction][self.prevState]
-		= self.qnn.nn.w[1][self.prevAction][self.prevState]
-		 + alpha * (reinforcement + gamma * predictedValue - self.qnn.nn.w[1][self.prevAction][self.prevState]) 
+		self.qnn.nn.w[1][self.qnn.lastAction][prevState]
+		= self.qnn.nn.w[1][self.qnn.lastAction][prevState]
+		 + alpha * (reinforcement + gamma * predictedValue - self.qnn.nn.w[1][self.qnn.lastAction][prevState]) 
 	end
 
-	self.curAction = 0
-	if self.curState ~= 0 then
-		local beta = 0
-		if self.qnn.nn.w[1][1][self.curState] < self.qnn.nn.w[1][2][self.curState] then
-			self.curAction = 2
-		else
-			self.curAction = 1
-		end
-	end
-
-	return self.curAction
+	-- this routine retains qnn.lastAction
+	return self.qnn:determineAction(self.curState)
 end
 
 local Cart = class()

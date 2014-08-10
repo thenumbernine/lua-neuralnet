@@ -2,7 +2,6 @@
 
 -- random walk RL
 
-local ANN = require 'neuralnet.ann'
 local TDNN = require 'neuralnet.tdnn'
 
 math.randomseed(os.time())

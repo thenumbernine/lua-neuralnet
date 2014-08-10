@@ -6,7 +6,7 @@ adapted from http://pages.cs.wisc.edu/~finton/rlpage.html
 
 local gl = require 'ffi.OpenGL'
 local openglapp = require 'openglapp'
-local QNN = require 'neuralnet.qnn'
+local TDNN = require 'neuralnet.tdnn'
 
 local function printf(...) return print(string.format(...)) end
 
@@ -21,7 +21,7 @@ local numActions = 2
 
 local CartController = class()
 function CartController:init()
-	self.qnn = QNN(numStates, numActions)
+	self.qnn = TDNN(numStates, numActions)
 	self.qnn.activation = function(x) return x end
 	self.qnn.activationDeriv = function() return 1 end
 	self.qnn.gamma = .99
@@ -97,6 +97,8 @@ function CartController:getAction(x, dx_dt, theta, dtheta_dt, reward)
 		self.qnn:applyReward(state, reward)
 	end
 	self.firstMove = false
+
+	self.curState = state
 
 	return self.qnn:determineAction(state)
 end

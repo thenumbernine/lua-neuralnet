@@ -11,7 +11,7 @@ local nn = ANN(2,2,1)
 for i=1,10000 do
 	local a = math.random(2) == 2
 	local b = math.random(2) == 2
-	local c = a and b
+	local c = a ~= b	--xor problem.  requires two layers to solve:  (a & ~b) | (~a & b) ... or ... (a | b) & (~a | ~b) ... either is 2 operations deep <=> two layers
 	nn.input[1] = a and 1 or -1
 	nn.input[2] = b and 1 or -1
 	--print('input', nn.input)

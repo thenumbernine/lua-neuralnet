@@ -1,0 +1,7 @@
+some neural network models I was messing with in Lua
+
+ANN = artifical neural network.  multi-layer, back-propagation.
+QNN = q-learning extension applied to an ANN.
+TDNN = td-learning extension.
+
+requires my lua-ext framework

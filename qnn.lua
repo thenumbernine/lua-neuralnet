@@ -17,6 +17,10 @@ function QNN:init(...)
 	-- TODO use linear activation function?
 end
 
+--[[
+This function is responsible for translating the state into neuron input signals.
+This is the one function that has to be replaced if you are going to change state from an integer to anything else.
+--]]
 function QNN:feedForwardForState(state)
 	for i=1,#self.nn.input do
 		self.nn.input[i] = i == state and 1 or 0

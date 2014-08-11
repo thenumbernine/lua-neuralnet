@@ -1,6 +1,5 @@
 #!/usr/bin/env luajit
 
-local ANN = require 'rlnn.ann'
 local TDNN = require 'rlnn.tdnn'
 
 math.randomseed(os.time())
@@ -127,15 +126,17 @@ end
 
 local board
 local nn
-local nnTwoLayer = false
+local nnTwoLayer = false	-- attempting to make use of neural net optimizations over the tables used for q-learning 
 if nnTwoLayer then
 	nn = TDNN(9,9,9)
 else
 	nn = TDNN(3^9,9)
 	nn.nn.useBias[1] = false
 end
+nn.historySize = 10	-- at least for each move in the board
+nn.lambda = 1	-- lambda = 1 means this should operate equivalent to min-max, right?
 nn.noise = 0
--- [[	
+-- [[	 use linear activation and clear weights
 nn.nn.activation = function(x) return x end
 nn.nn.activationDeriv = function() return 1 end
 for k=1,#nn.nn.w do

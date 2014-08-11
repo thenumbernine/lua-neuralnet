@@ -5,7 +5,7 @@ adapted from http://pages.cs.wisc.edu/~finton/rlpage.html
 --]]
 
 local gl = require 'ffi.OpenGL'
-local openglapp = require 'openglapp'
+local GLApp = require 'glapp'
 local TDNN = require 'neuralnet.tdnn'
 
 local function printf(...) return print(string.format(...)) end
@@ -208,6 +208,7 @@ local createNeuralNetwork = ({
 	end,
 
 	-- my attempt at q-learning neural networks
+	-- not going so well
 	multiLayerContinuousState = function()
 		
 		local desc = ContinuousStateDescription()
@@ -318,34 +319,32 @@ function Cart:simulate(action)
 end
 local cart = Cart()
 
-openglapp:run{
-	init = function()
-	end,
-	update = function()
-		gl.glClear(gl.GL_COLOR_BUFFER_BIT)
+local CartPoleGLApp = class(GLApp)
+function CartPoleGLApp:update()
+	gl.glClear(gl.GL_COLOR_BUFFER_BIT)
 
-		cart:step()
+	cart:step()
 
-		local width, height = openglapp:size()
-		local aspectRatio = width / height
+	local width, height = self:size()
+	local aspectRatio = width / height
 
-		gl.glMatrixMode(gl.GL_PROJECTION)
-		gl.glLoadIdentity()
-		local scale = 3
-		gl.glOrtho(-aspectRatio * scale, aspectRatio * scale, -scale, scale, -1, 1)
-	
-		gl.glMatrixMode(gl.GL_MODELVIEW)
-		gl.glLoadIdentity()
+	gl.glMatrixMode(gl.GL_PROJECTION)
+	gl.glLoadIdentity()
+	local scale = 3
+	gl.glOrtho(-aspectRatio * scale, aspectRatio * scale, -scale, scale, -1, 1)
 
-		gl.glPointSize(3)
-		gl.glColor3f(1,0,0)
-		gl.glBegin(gl.GL_POINTS)
-		gl.glVertex2f(cart.x, 0)
-		gl.glEnd()
-		gl.glColor3f(1,1,0)
-		gl.glBegin(gl.GL_LINES)
-		gl.glVertex2f(cart.x, 0)
-		gl.glVertex2f(cart.x + math.sin(cart.theta), math.cos(cart.theta))
-		gl.glEnd()
-	end,
-}
+	gl.glMatrixMode(gl.GL_MODELVIEW)
+	gl.glLoadIdentity()
+
+	gl.glPointSize(3)
+	gl.glColor3f(1,0,0)
+	gl.glBegin(gl.GL_POINTS)
+	gl.glVertex2f(cart.x, 0)
+	gl.glEnd()
+	gl.glColor3f(1,1,0)
+	gl.glBegin(gl.GL_LINES)
+	gl.glVertex2f(cart.x, 0)
+	gl.glVertex2f(cart.x + math.sin(cart.theta), math.cos(cart.theta))
+	gl.glEnd()
+end
+CartPoleGLApp():run()

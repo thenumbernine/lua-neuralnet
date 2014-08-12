@@ -166,9 +166,9 @@ end
 
 
 -- init based on whether we want discrete/continuous state representation 
---local neuralNetworkMethod = 'singleLayerDiscreteState'
+local neuralNetworkMethod = 'singleLayerDiscreteState'
 --local neuralNetworkMethod = 'multiLayerDiscreteState'
-local neuralNetworkMethod = 'multiLayerContinuousState'
+--local neuralNetworkMethod = 'multiLayerContinuousState'
 
 local getState
 local createNeuralNetwork = ({
@@ -278,7 +278,7 @@ function Cart:step()
 		self:reset()
 	else
 		self.iteration = self.iteration + 1
-		local action = self.controller:getAction(self.x, self.dx_dt, self.theta, self.dtheta_dt, 0)
+		local action = self.controller:getAction(self.x, self.dx_dt, self.theta, self.dtheta_dt, .01)
 
 		local failed = self:simulate(action)
 
@@ -346,5 +346,32 @@ function CartPoleGLApp:update()
 	gl.glVertex2f(cart.x, 0)
 	gl.glVertex2f(cart.x + math.sin(cart.theta), math.cos(cart.theta))
 	gl.glEnd()
+
+	local function colorForQ(q)
+		return .5 + math.max(0,q), .5, .5 - math.min(0,q)
+	end
+	gl.glPushMatrix()
+	gl.glTranslatef(-4, -2.5, 0)
+	gl.glScalef(.2, .2, .1)
+	gl.glBegin(gl.GL_QUADS)
+	for i=0,2 do
+		for j=0,2 do
+			for k=0,5 do
+				for l=0,2 do
+					for action=1,2 do
+						local state = 1 + i + 3 * (j + 3 * (k + 6 * l))
+						print(state)
+						gl.glColor3f(colorForQ(cart.controller.qnn.nn.w[1][action][state]))
+						gl.glVertex2f(7*i + k + .4 * (action-1), 4*j + l)
+						gl.glVertex2f(7*i + k + .4 * (action-1 + .8), 4*j + l)
+						gl.glVertex2f(7*i + k + .4 * (action-1 + .8), 4*j + l+.9)
+						gl.glVertex2f(7*i + k + .4 * (action-1), 4*j + l+.9)
+					end
+				end
+			end
+		end
+	end
+	gl.glEnd()
+	gl.glPopMatrix()
 end
 CartPoleGLApp():run()

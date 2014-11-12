@@ -8,8 +8,6 @@ local gl = require 'ffi.OpenGL'
 local GLApp = require 'glapp'
 local TDNN = require 'neuralnet.tdnn'
 
-local function printf(...) return print(string.format(...)) end
-
 math.randomseed(os.time())
 
 
@@ -360,7 +358,6 @@ function CartPoleGLApp:update()
 				for l=0,2 do
 					for action=1,2 do
 						local state = 1 + i + 3 * (j + 3 * (k + 6 * l))
-						print(state)
 						gl.glColor3f(colorForQ(cart.controller.qnn.nn.w[1][action][state]))
 						gl.glVertex2f(7*i + k + .4 * (action-1), 4*j + l)
 						gl.glVertex2f(7*i + k + .4 * (action-1 + .8), 4*j + l)

@@ -125,13 +125,13 @@ function ContinuousStateDescription:createNeuralNetwork(...)
 		assert(#state == desc.numStates)
 		assert(#state + desc.numActions == #self.nn.input)
 		-- upload states
-		for i=1,#self.nn.input do
+		for i=1,#state do
 			self.nn.input[i] = state[i]
 		end
 		-- upload last action
-		if self.nn.lastAction then
+		if self.lastAction then
 			for i=1,desc.numActions do
-				self.nn.input[i+#state] = self.nn.lastAction[i]
+				self.nn.input[i+#state] = self.lastAction == i and 1 or 0
 			end
 		else
 			for i=1,desc.numActions do
@@ -164,9 +164,9 @@ end
 
 
 -- init based on whether we want discrete/continuous state representation 
-local neuralNetworkMethod = 'singleLayerDiscreteState'
+--local neuralNetworkMethod = 'singleLayerDiscreteState'
 --local neuralNetworkMethod = 'multiLayerDiscreteState'
---local neuralNetworkMethod = 'multiLayerContinuousState'
+local neuralNetworkMethod = 'multiLayerContinuousState'
 
 local getState
 local createNeuralNetwork = ({
@@ -352,17 +352,19 @@ function CartPoleGLApp:update()
 	gl.glTranslatef(-4, -2.5, 0)
 	gl.glScalef(.2, .2, .1)
 	gl.glBegin(gl.GL_QUADS)
-	for i=0,2 do
-		for j=0,2 do
-			for k=0,5 do
-				for l=0,2 do
-					for action=1,2 do
-						local state = 1 + i + 3 * (j + 3 * (k + 6 * l))
-						gl.glColor3f(colorForQ(cart.controller.qnn.nn.w[1][action][state]))
-						gl.glVertex2f(7*i + k + .4 * (action-1), 4*j + l)
-						gl.glVertex2f(7*i + k + .4 * (action-1 + .8), 4*j + l)
-						gl.glVertex2f(7*i + k + .4 * (action-1 + .8), 4*j + l+.9)
-						gl.glVertex2f(7*i + k + .4 * (action-1), 4*j + l+.9)
+	if #cart.controller.qnn.nn.w[1][1] == 3*3*6*3+1 then
+		for i=0,3-1 do
+			for j=0,3-1 do
+				for k=0,6-1 do
+					for l=0,3-1 do
+						for action=1,2 do
+							local state = 1 + i + 3 * (j + 3 * (k + 6 * l))
+							gl.glColor3f(colorForQ(cart.controller.qnn.nn.w[1][action][state]))
+							gl.glVertex2f(7*i + k + .4 * (action-1), 4*j + l)
+							gl.glVertex2f(7*i + k + .4 * (action-1 + .8), 4*j + l)
+							gl.glVertex2f(7*i + k + .4 * (action-1 + .8), 4*j + l+.9)
+							gl.glVertex2f(7*i + k + .4 * (action-1), 4*j + l+.9)
+						end
 					end
 				end
 			end

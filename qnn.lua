@@ -39,18 +39,20 @@ local function pickRandom(x) return x[math.random(#x)] end
 -- function QNN:getReward(state, action, nextState)
 -- function QNN:applyAction(state, action)
 function QNN:getBestAction(qs)
-	local noisyQs = table()
-	local best = table()
-	for i=1,#qs do
-		noisyQs[i] = qs[i] + math.random() * self.noise
-		if #best == 0 or noisyQs[i] > noisyQs[best[1]] then
-			best = table{i}
-		elseif noisyQs[i] == noisyQs[best[1]] then
-			best:insert(i)
+	if math.random() < self.noise then
+		return math.random(#qs)
+	else
+		local best = table()
+		for i=1,#qs do
+			if #best == 0 or qs[i] > qs[best[1]] then
+				best = table{i}
+			elseif qs[i] == qs[best[1]] then
+				best:insert(i)
+			end
 		end
+		-- TODO or number weighting or first-best
+		return pickRandom(best)
 	end
-	-- TODO or number weighting or first-best
-	return pickRandom(best)
 end
 
 function QNN:determineAction(state)

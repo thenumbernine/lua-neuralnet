@@ -116,10 +116,28 @@ ContinuousStateDescription.numStates = 4
 
 function ContinuousStateDescription:createNeuralNetwork(...)
 	local desc = self
+	
 	local rlnn = ContinuousStateDescription.super.createNeuralNetwork(self, ...)
+	rlnn.gamma = .99	-- q-learning gamma
+	rlnn.alpha = 1		-- weight update amount
+	rlnn.lambda = .99		-- history influence
+	rlnn.noise = 0		-- noise within the choosing process.  TODO this should be noise of whether to choose the greedy or a random action 
+	rlnn.historySize = 100
+	
 	-- set signal to sigmoid
-	rlnn.activation = function(x) return 1 / (1 + math.exp(-x)) end
-	rlnn.activationDeriv = function(x,y) return y * (1 - y) end
+	--rlnn.activation = function(x) return 1 / (1 + math.exp(-x)) end
+	--rlnn.activationDeriv = function(x,y) return y * (1 - y) end
+	local oobslope = .3
+	rlnn.activation = function(x)
+		if x < 0 then return oobslope * x end
+		if x > 1 then return oobslope * x + (1 - oobslope) end
+		return x
+	end
+	rlnn.activationDeriv = function(x,y)
+		if x < 0 or x > 1 then return oobslope end
+		return 1
+	end
+	
 	-- set input to be signals of state + last output (last action)
 	rlnn.feedForwardForState = function(self, state)
 		assert(#state == desc.numStates)
@@ -164,9 +182,9 @@ end
 
 
 -- init based on whether we want discrete/continuous state representation 
---local neuralNetworkMethod = 'singleLayerDiscreteState'
+local neuralNetworkMethod = 'singleLayerDiscreteState'
 --local neuralNetworkMethod = 'multiLayerDiscreteState'
-local neuralNetworkMethod = 'multiLayerContinuousState'
+--local neuralNetworkMethod = 'multiLayerContinuousState'
 
 local getState
 local createNeuralNetwork = ({
@@ -216,15 +234,21 @@ local createNeuralNetwork = ({
 
 		local rlnn = desc:createNeuralNetwork(
 			desc.numStates + desc.numActions,
-			16,
+			10,
+			10,
+			10,
+			10,
+			10,
 			desc.numActions)
-	
-		for i=1,#rlnn.nn.w[2] do
-			for j=1,#rlnn.nn.w[2][i] do
-				rlnn.nn.w[2][i][j] = i == j and 1 or 0
+
+		for k=1,#rlnn.nn.w do
+			for i=1,#rlnn.nn.w[k] do
+				for j=1,#rlnn.nn.w[k][i] do
+					rlnn.nn.w[k][i][j] = (math.random() * 2 - 1) * .5	--i == j and 1 or 0
+				end
 			end
 		end
-	
+
 		return rlnn	
 	end,	
 })[neuralNetworkMethod]

@@ -174,7 +174,7 @@ nn.getBestAction = function(self, qs)
 	-- picks randomly from all top actions
 	local bestAction = TDNN.getBestAction(self, occludedQs)
 	-- picks the first best
-	--local bestAction = occludedQs:sup()
+	--local bestAction = select(2, occludedQs:sup())
 	return bestAction
 end
 local MinMaxPlayer = class{
@@ -200,7 +200,7 @@ local MinMaxPlayer = class{
 			end
 			print()
 		end
-		local bestIndex = scoresForMoves:sup()
+		local bestIndex = select(2, scoresForMoves:sup())
 		if not bestIndex then
 			print('failed to find move')
 			print('board',board)

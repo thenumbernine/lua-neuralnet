@@ -69,7 +69,7 @@ end
 
 function QNN:applyReward(state, reward)
 	local nextQs = self:getQs(state)		-- Q(S[t+1], *)	
-	local maxNextQ = select(2, nextQs:sup())	-- max(Q(S[t+1], *))
+	local maxNextQ = nextQs:sup()	-- max(Q(S[t+1], *))
 
 	-- setup input for backpropagation
 	self:feedForwardForState(self.lastState)

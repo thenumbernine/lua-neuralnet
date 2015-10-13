@@ -165,7 +165,7 @@ end
 nn.getBestAction = function(self, qs)
 	local occludedQs = qs:map(function(q,i)
 		if getPlaceForIndex(board,i) ~= 0 then
-			return -math.inf
+			return -math.huge
 		else
 			--print('q move',i,'score',q)
 			return q

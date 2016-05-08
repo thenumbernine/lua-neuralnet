@@ -1,6 +1,7 @@
 #!/usr/bin/env luajit
 
 -- random walk RL
+local maxiter = ... or 5
 
 local TDNN = require 'neuralnet.tdnn'
 
@@ -33,7 +34,7 @@ local function printState(state)
 end
 local gamma = .9
 local alpha = 1
-for iter=1,5 do
+for iter=1,maxiter do
 	local state = math.ceil(size/2)
 	local numSteps = 0
 	repeat
@@ -48,4 +49,3 @@ for iter=1,5 do
 	print(tdnn..' steps:'..numSteps)
 	--print()
 end
-

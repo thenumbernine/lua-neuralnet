@@ -48,4 +48,3 @@ function TDNN:applyReward(state, reward)
 end
 
 return TDNN
-

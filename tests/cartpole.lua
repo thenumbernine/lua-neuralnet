@@ -4,7 +4,7 @@
 adapted from http://pages.cs.wisc.edu/~finton/rlpage.html
 --]]
 
-local gl = require 'ffi.OpenGL'
+local gl = require 'gl'
 local GLApp = require 'glapp'
 local TDNN = require 'neuralnet.tdnn'
 

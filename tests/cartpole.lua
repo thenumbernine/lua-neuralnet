@@ -20,7 +20,7 @@ local StateDescription = class()
 
 function StateDescription:createNeuralNetwork(...)
 	local rlnn = TDNN(...)
-	rlnn.gamma = .99
+	rlnn.gamma = .9
 	rlnn.noise = 0
 	for k=1,#rlnn.nn.w do
 		-- initialize weights to zero
@@ -68,7 +68,7 @@ DiscreteStateDescription.numStates =
 	DiscreteStateDescription.thetaBins * 
 	DiscreteStateDescription.dthetadtBins
 
-DiscreteStateDescription.numActions = 2
+DiscreteStateDescription.numActions = 3
 
 function DiscreteStateDescription:getState(x, dx_dt, theta, dtheta_dt)
 	if x < -2.4 or x > 2.4 
@@ -111,7 +111,7 @@ end
 
 local ContinuousStateDescription = class(StateDescription)
 
-ContinuousStateDescription.numActions = 2
+ContinuousStateDescription.numActions = 3
 ContinuousStateDescription.numStates = 4
 
 function ContinuousStateDescription:createNeuralNetwork(...)
@@ -120,7 +120,7 @@ function ContinuousStateDescription:createNeuralNetwork(...)
 	local rlnn = ContinuousStateDescription.super.createNeuralNetwork(self, ...)
 	rlnn.gamma = .99	-- q-learning gamma
 	rlnn.alpha = 1		-- weight update amount
-	rlnn.lambda = .99		-- history influence
+	rlnn.lambda = .99	-- history influence
 	rlnn.noise = 0		-- noise within the choosing process.  TODO this should be noise of whether to choose the greedy or a random action 
 	rlnn.historySize = 100
 	
@@ -320,10 +320,10 @@ function Cart:simulate(action)
 	local totalMass = massPole + massCart
 	local length = .5
 	local poleMassLength = massPole * length
-	local forceMag = 10
+	local forceMag = 20
 	local dt = .02
 
-	local force = ({-forceMag, forceMag})[action] or 0
+	local force = ({-forceMag, 0, forceMag})[action]
 	local cosTheta = math.cos(self.theta)
 	local sinTheta = math.sin(self.theta)
 	local temp = (force + poleMassLength * self.dtheta_dt * self.dtheta_dt * sinTheta) / totalMass
@@ -381,13 +381,13 @@ function CartPoleGLApp:update()
 			for j=0,3-1 do
 				for k=0,6-1 do
 					for l=0,3-1 do
-						for action=1,2 do
+						for action=1,3 do
 							local state = 1 + i + 3 * (j + 3 * (k + 6 * l))
 							gl.glColor3f(colorForQ(cart.controller.qnn.nn.w[1][action][state]))
-							gl.glVertex2f(7*i + k + .4 * (action-1), 4*j + l)
-							gl.glVertex2f(7*i + k + .4 * (action-1 + .8), 4*j + l)
-							gl.glVertex2f(7*i + k + .4 * (action-1 + .8), 4*j + l+.9)
-							gl.glVertex2f(7*i + k + .4 * (action-1), 4*j + l+.9)
+							gl.glVertex2f(7*i + k + .2 * (action-1), 4*j + l)
+							gl.glVertex2f(7*i + k + .2 * (action-1 + .8), 4*j + l)
+							gl.glVertex2f(7*i + k + .2 * (action-1 + .8), 4*j + l+.9)
+							gl.glVertex2f(7*i + k + .2 * (action-1), 4*j + l+.9)
 						end
 					end
 				end

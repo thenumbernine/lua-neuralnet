@@ -1,6 +1,6 @@
 #!/usr/bin/env luajit
 
-local TDNN = require 'rlnn.tdnn'
+local TDNN = require 'neuralnet.tdnn'
 
 math.randomseed(os.time())
 

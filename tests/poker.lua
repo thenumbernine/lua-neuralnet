@@ -1,3 +1,4 @@
+#!/usr/bin/env luajit
 require 'ext'
 local TDNN = require 'neuralnet.tdnn'
 

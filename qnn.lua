@@ -1,6 +1,6 @@
-require 'ext'
-
 local ANN = require 'neuralnet.ann'
+local class = require 'ext.class'
+local table = require 'ext.table'
 
 -- q-learner with NN impl
 local QNN = class()
@@ -98,4 +98,3 @@ end
 function QNN.__concat(a,b) return tostring(a) .. tostring(b) end
 
 return QNN
-

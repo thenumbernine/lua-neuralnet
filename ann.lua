@@ -1,63 +1,23 @@
-require 'ext'
-
-local Vector = class()
-
-function Vector:init(h)
-	for i=1,h do
-		self[i] = 0
-	end
-end
-
-function Vector:apply(src, f)
-	assert(#self == #src)
-	for i=1,#self do
-		self[i] = f(src[i])
-	end
-end
-
-function Vector:__tostring()
-	return '['..table.concat(self, ',')..']'
-end
-
-function Vector.__concat(a,b) return tostring(a) .. tostring(b) end
-
-local Matrix = class()
-
-function Matrix:init(h,w)
-	self.size = {h,w}	-- math index
-	for i=1,h do
-		self[i] = {}
-		for j=1,w do
-			self[i][j] = (math.random()-.5)*.2
-		end
-	end
-end
+local matrix = require 'matrix'
+local class = require 'ext.class'
 
 -- c_i = a_ij b_j
-function Matrix:multiplyWithBias(vin,vout, useBias)
-	assert(self.size[2] == #vin+1)
-	assert(self.size[1] == #vout)
-	for i=1,self.size[1] do
+local function multiplyWithBias(m, vin, vout, useBias)
+	local h = #m
+	local w = #m[1]
+	assert(w == #vin+1)
+	assert(h == #vout)
+	for i=1,h do
 		local s = 0
-		for j=1,self.size[2]-1 do
-			s = s + self[i][j] * vin[j]
+		for j=1,w-1 do
+			s = s + m[i][j] * vin[j]
 		end
 		if useBias then
-			s = s + self[i][self.size[2]]
+			s = s + m[i][w]
 		end
 		vout[i] = s
 	end
 end
-
-function Matrix:__tostring()
-	return '['..table.map(self, function(c,i)
-		if type(i) == 'number' then
-			return '['..table.concat(c, ',')..']'
-		end
-	end):concat(',')..']'
-end
-
-function Matrix.__concat(a,b) return tostring(a) .. tostring(b) end
 
 --[[
 self.x[1..n]
@@ -86,25 +46,27 @@ function ANN:init(...)
 	self.net = {}
 	self.netErr = {}
 	for i=1,#layerSizes do
-		self.x[i] = Vector(layerSizes[i])
-		self.xErr[i] = Vector(layerSizes[i])
+		self.x[i] = matrix.zeros(layerSizes[i])
+		self.xErr[i] = matrix.zeros(layerSizes[i])
 		if i<#layerSizes then
-			self.w[i] = Matrix(layerSizes[i+1], layerSizes[i]+1)
+			self.w[i] = matrix.zeros(layerSizes[i+1], layerSizes[i]+1)
 			self.useBias[i] = true
-			self.net[i] = Vector(layerSizes[i+1])
-			self.netErr[i] = Vector(layerSizes[i+1])
+			self.net[i] = matrix.zeros(layerSizes[i+1])
+			self.netErr[i] = matrix.zeros(layerSizes[i+1])
 		end
 	end
 	self.input = self.x[1]
 	self.output = self.x[#self.x]
 	self.outputError = self.xErr[#self.xErr]
-	self.desired = Vector(#self.output)
+	self.desired = matrix.zeros(#self.output)
 end
 
 function ANN:feedForward()
 	for i=1,#self.w do
-		self.w[i]:multiplyWithBias(self.x[i], self.net[i], self.useBias[i])
-		self.x[i+1]:apply(self.net[i], self.activation)
+		multiplyWithBias(self.w[i], self.x[i], self.net[i], self.useBias[i])
+		for j=1,#self.net[i] do
+			self.x[i+1][j] = self.activation(self.net[i][j])
+		end
 	end
 end
 
@@ -149,7 +111,7 @@ function ANN:backPropagate(dt)
 			self.xErr[i][j] = s
 		end
 		-- adjust new weights
-		for j=1,self.w[i].size[1] do
+		for j=1,#self.w[i] do
 			local l = #self.x[i]
 			for k=1,l do
 				self.w[i][j][k] = self.w[i][j][k] + dt * self.netErr[i][j] * self.x[i][k]
@@ -162,5 +124,3 @@ function ANN:backPropagate(dt)
 end
 
 return ANN
-
-

@@ -1,6 +1,6 @@
-require 'ext'
-
 local QNN = require 'neuralnet.qnn'
+local class = require 'ext.class'
+local table = require 'ext.table'
 
 local TDNN = class(QNN)
 

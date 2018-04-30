@@ -1,9 +1,9 @@
 #!/usr/bin/env luajit
-
 --[[
 adapted from http://pages.cs.wisc.edu/~finton/rlpage.html
 --]]
 
+require 'ext'
 local gl = require 'gl'
 local GLApp = require 'glapp'
 local TDNN = require 'neuralnet.tdnn'

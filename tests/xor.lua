@@ -1,11 +1,14 @@
 #!/usr/bin/env luajit
 
+require 'ext'
+gnuplot = require 'gnuplot'
 local ANN = require 'neuralnet.ann'
-local TDNN = require 'neuralnet.tdnn'
 
 math.randomseed(os.time())
 
 local nn = ANN(2,2,1)
+
+local results = range(5):map(function() return table() end)
 
 -- first test: teach it and/or 
 for i=1,10000 do
@@ -25,9 +28,14 @@ for i=1,10000 do
 	nn.desired[1] = c and 1 or -1
 	--print('desired', nn.desired)
 	local err = nn:calcError()
-	print(nn.input[1], nn.input[2], nn.output[1] > 0 and 1 or -1, nn.desired[1], math.log(err))
+	results[1]:insert(nn.input[1])
+	results[2]:insert(nn.input[2])
+	results[3]:insert(nn.output[1])
+	results[4]:insert(nn.desired[1])
+	results[5]:insert(err)
+	
 	--print('de/dy', nn.xErr[3])
-	nn:backPropagate(.01)
+	nn:backPropagate(.1)
 	--print('de/dnet y', nn.netErr[2])
 	--print('de/dmid', nn.xErr[2])
 	--print('de/dnet mid', nn.netErr[1])
@@ -35,3 +43,11 @@ for i=1,10000 do
 	--print()
 end
 
+gnuplot{
+	terminal = 'png size 1024,768',
+	output = 'xor.png',
+	style = 'data lines',
+	log = 'xy',
+	data = results,
+	{using='0:5', title='error'},
+}

@@ -1,6 +1,16 @@
 local matrix = require 'matrix'
 local class = require 'ext.class'
 
+local function initWeights(h, w)
+	local m = matrix.zeros(h, w)
+	for i=1,h do
+		for j=1,w do
+			m[i][j] = math.random() * 2 - 1
+		end
+	end
+	return m
+end
+
 -- c_i = a_ij b_j
 local function multiplyWithBias(m, vin, vout, useBias)
 	local h = #m
@@ -49,7 +59,7 @@ function ANN:init(...)
 		self.x[i] = matrix.zeros(layerSizes[i])
 		self.xErr[i] = matrix.zeros(layerSizes[i])
 		if i<#layerSizes then
-			self.w[i] = matrix.zeros(layerSizes[i+1], layerSizes[i]+1)
+			self.w[i] = initWeights(layerSizes[i+1], layerSizes[i]+1)
 			self.useBias[i] = true
 			self.net[i] = matrix.zeros(layerSizes[i+1])
 			self.netErr[i] = matrix.zeros(layerSizes[i+1])

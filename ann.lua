@@ -15,7 +15,7 @@ end
 local function multiplyWithBias(m, vin, vout, useBias)
 	local h = #m
 	local w = #m[1]
-	assert(w == #vin+1)
+	if w ~= #vin+1 then error("expected weights width "..w.." to equal input size "..#vin.." + 1") end
 	assert(h == #vout)
 	for i=1,h do
 		local s = 0

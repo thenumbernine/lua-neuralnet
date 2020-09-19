@@ -75,7 +75,7 @@ local function printBoard(board)
 	print()
 end
 
-if io.fileexists(fn) then
+if os.fileexists(fn) then
 	minMaxs = io.readfile(fn):split('\n'):map(function(l) return tonumber(l) end)
 else
 	print('building minmax...')	

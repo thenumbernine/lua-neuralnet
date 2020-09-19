@@ -300,7 +300,7 @@ function Cart:step()
 		self:reset()
 	else
 		self.iteration = self.iteration + 1
-		local action = self.controller:getAction(self.x, self.dx_dt, self.theta, self.dtheta_dt, .01)
+		local action = self.controller:getAction(self.x, self.dx_dt, self.theta, self.dtheta_dt, .001)
 
 		local failed = self:simulate(action)
 

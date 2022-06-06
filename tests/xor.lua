@@ -11,7 +11,7 @@ local nn = ANN(2,2,1)
 local results = range(5):map(function() return table() end)
 
 -- first test: teach it and/or 
-for i=1,10000 do
+for i=1,100000 do
 	local a = math.random(2) == 2
 	local b = math.random(2) == 2
 	local c = a ~= b	--xor problem.  requires two layers to solve:  (a & ~b) | (~a & b) ... or ... (a | b) & (~a | ~b) ... either is 2 operations deep <=> two layers
@@ -46,7 +46,7 @@ end
 gnuplot{
 	terminal = 'png size 1024,768',
 	output = 'xor.png',
-	style = 'data lines',
+	style = 'data points',
 	log = 'xy',
 	data = results,
 	{using='0:5', title='error'},

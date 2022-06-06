@@ -39,7 +39,7 @@ end
 require 'gnuplot'{
 	terminal = 'png size 1024,768',
 	output = 'complex_mul.png',
-	style = 'data lines',
+	style = 'data points',
 	log = 'xy',
 	data = {results},
 	{using='0:1', title='error'},

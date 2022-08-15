@@ -134,11 +134,12 @@ end
 
 local board
 local nn
-local nnTwoLayer = false	-- attempting to make use of neural net optimizations over the tables used for q-learning 
+local nnTwoLayer = true	-- attempting to make use of neural net optimizations over the tables used for q-learning 
 if nnTwoLayer then
-	nn = TDNN(9,9,9)
+	nn = TDNN(9,9,9)	-- input is -1 for O, 0 for empty, +1 for X.  output is which place to play. (but what about X's turn vs O's turn?)
+	--nn = TDNN(27,9,3)	-- input: {empty, X, O} times 9 places.  output: stalemate, X wins, O wins
 else
-	nn = TDNN(3^9,9)
+	nn = TDNN(3^9,9)	-- this should just rebuild the min/max table.
 	nn.nn.useBias[1] = false
 end
 nn.historySize = 10	-- at least for each move in the board
@@ -173,7 +174,7 @@ end
 nn.getBestAction = function(self, qs)
 	local occludedQs = qs:map(function(q,i)
 		if getPlaceForIndex(board,i) ~= 0 then
-			return -math.huge
+			return -math.huge	-- TODO why are these actions getting chosen?
 		else
 			--print('q move',i,'score',q)
 			return q
@@ -252,8 +253,16 @@ function NNPlayer:play(board)
 	else
 		nn:applyReward(board, 0)
 	end
-	local action = nn:determineAction(board)
+	
+	local action 
+	while true do
+		action = nn:determineAction(board)
+		if getPlaceForIndex(board, action) == 0 then break end
+		nn:applyReward(board, 0)	-- TODO hmm , how about a negative reward of some sort?  that means multiple outputs
+	end
+	
 	board = applyMove(action, board, self.playerno)
+	
 	return board
 end
 	
@@ -316,17 +325,17 @@ end
 --[[
 --]]
 local players = {
-	NNPlayer(),
+	--NNPlayer(),
 	--MinMaxPlayer(),
 	--MinMaxPlayer(),
+	--HumanPlayer(),
+	--HumanPlayer(),
+	RandomPlayer(),
+	--RandomPlayer(),
 	NNPlayer(),
-	--HumanPlayer(),
-	--HumanPlayer(),
-	--RandomPlayer(),
-	--RandomPlayer(),
 }
 local wins = {[0]=0,0,0}
-for iter=1,100 do
+for iter=1,10000 do
 	board = 1
 	for playerno,player in ipairs(players) do
 		player.playerno = playerno

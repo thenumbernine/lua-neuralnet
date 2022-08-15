@@ -1,5 +1,9 @@
 #!/usr/bin/env luajit
-require 'ext'
+local class = require 'ext.class'
+local table = require 'ext.table'
+local string = require 'ext.string'
+local os = require 'ext.os'
+local io = require 'ext.io'
 local TDNN = require 'neuralnet.tdnn'
 
 math.randomseed(os.time())
@@ -76,7 +80,7 @@ local function printBoard(board)
 end
 
 if os.fileexists(fn) then
-	minMaxs = io.readfile(fn):split('\n'):map(function(l) return tonumber(l) end)
+	minMaxs = string.split(assert(io.readfile(fn)), '\n'):map(function(l) return tonumber(l) end)
 else
 	print('building minmax...')	
 	local minMaxTotals = {}
@@ -121,7 +125,11 @@ else
 			minMaxs[i] = minMaxs[i] / minMaxTotals[i]
 		end
 	end
-	io.writefile(fn, minMaxs:concat('\n'))
+	local dir = io.getfiledir(fn)
+	if dir then
+		os.mkdir(dir)
+	end
+	assert(io.writefile(fn, minMaxs:concat('\n')))
 end
 
 local board
@@ -177,80 +185,104 @@ nn.getBestAction = function(self, qs)
 	--local bestAction = select(2, occludedQs:sup())
 	return bestAction
 end
-local MinMaxPlayer = class{
-	name = 'minmax',
-	startGame = function(self)
-	end,
-	play = function(self, board)
-		local moves = getMoves(board)
-		local scoresForMoves = moves:map(function(move)
-			local scoreForMove = minMaxs[applyMove(move, board, self.playerno)]
-			--print('minmax move',move,'score',scoreForMove)
-			return scoreForMove
-		end)
-		for i=1,3 do
-			for j=1,3 do
-				local move = (i-1) + 3 * (j-1) + 1
-				if getPlaceForIndex(board, move) == 0 then
-					local newBoard = applyMove(move, board, self.playerno)
-					io.write((' %.2f'):format(minMaxs[newBoard]))
-				else
-					io.write('  *  ')
-				end
+
+
+local Player = class()
+
+Player.name = 'abstract player' 
+
+function Player:startGame() end
+
+function Player:play(board)
+	erorr("TODO implement me!")
+end
+
+function Player:done() end
+
+
+local MinMaxPlayer = class(Player)
+
+MinMaxPlayer.name = 'minmax'
+	
+function MinMaxPlayer:play(board)
+	local moves = getMoves(board)
+	local scoresForMoves = moves:map(function(move)
+		local scoreForMove = minMaxs[applyMove(move, board, self.playerno)]
+		--print('minmax move',move,'score',scoreForMove)
+		return scoreForMove
+	end)
+	for i=1,3 do
+		for j=1,3 do
+			local move = (i-1) + 3 * (j-1) + 1
+			if getPlaceForIndex(board, move) == 0 then
+				local newBoard = applyMove(move, board, self.playerno)
+				io.write((' %.2f'):format(minMaxs[newBoard]))
+			else
+				io.write('  *  ')
 			end
-			print()
 		end
-		local bestIndex = select(2, scoresForMoves:sup())
-		if not bestIndex then
-			print('failed to find move')
-			print('board',board)
-			print('board minmax',minMaxs[board])
-			print('moves',moves:concat(','))
-			error('')
+		print()
+	end
+	local bestIndex = select(2, scoresForMoves:sup())
+	if not bestIndex then
+		print('failed to find move')
+		print('board',board)
+		print('board minmax',minMaxs[board])
+		print('moves',moves:concat(','))
+		error('')
+	end
+	local move = moves[bestIndex]
+	board = applyMove(move, board, self.playerno)
+	return board
+end
+
+
+local NNPlayer = class(Player)
+
+NNPlayer.name = 'qnn'
+
+function NNPlayer:startGame()
+	nn.playerno = self.playerno
+	self.firstturn = true
+end
+	
+function NNPlayer:play(board)
+	if self.firstturn then
+		self.firstturn = nil
+	else
+		nn:applyReward(board, 0)
+	end
+	local action = nn:determineAction(board)
+	board = applyMove(action, board, self.playerno)
+	return board
+end
+	
+function NNPlayer:done(winningPlayer)
+	if winningPlayer == 0 then
+		nn:applyReward(board, 0)
+	elseif winningPlayer ~= self.playerno then
+		nn:applyReward(board, -1)
+	elseif winningPlayer == self.playerno then
+		nn:applyReward(board, 1)
+	end
+end
+
+
+local HumanPlayer = class(Player)
+HumanPlayer.name = 'human'
+
+function HumanPlayer:play(board)
+	printBoard(board)
+	local move
+	while true do
+		while true do
+			io.write('>')
+			move = io.read'*l'
+			print('got move and move', move)
+			move = tonumber(move)
+			if move and move >= 1 and move <= 9 then break end
+			print('not a valid input!')
 		end
-		local move = moves[bestIndex]
-		board = applyMove(move, board, self.playerno)
-		return board
-	end,
-	done = function(self, winningPlayer)
-	end,
-}
-local nnplayer = {
-	name = 'qnn',
-	startGame = function(self)
-		nn.playerno = self.playerno
-		self.firstturn = true
-	end,
-	play = function(self, board)
-		if self.firstturn then
-			self.firstturn = nil
-		else
-			nn:applyReward(board, 0)
-		end
-		local action = nn:determineAction(board)
-		board = applyMove(action, board, self.playerno)
-		return board
-	end,
-	done = function(self, winningPlayer)
-		if winningPlayer == 0 then
-			nn:applyReward(board, 0)
-		elseif winningPlayer ~= self.playerno then
-			nn:applyReward(board, -1)
-		elseif winningPlayer == self.playerno then
-			nn:applyReward(board, 1)
-		end
-	end,
-}
-local HumanPlayer = {
-	name = 'human',
-	startGame = function() end,
-	play = function(self, board)
-		printBoard(board)
-		io.write('>')
-		local move
-		repeat
-			move = tonumber(io.read('*l'))
-		until move and move >= 1 and move <= 9
 		move = ({
 			[7] = 1,
 			[4] = 2,
@@ -262,16 +294,36 @@ local HumanPlayer = {
 			[6] = 8,
 			[3] = 9,
 		})[move]
-		board = applyMove(move, board, self.playerno)
-		return board
-	end,
-	done = function() end,
-}
+		if getPlaceForIndex(board, move) == 0 then break end
+		print'already a piece there!'
+	end
+
+	board = applyMove(move, board, self.playerno)
+	return board
+end
+
+local RandomPlayer = class(Player)
+RandomPlayer.name = 'random'
+function RandomPlayer:play(board)
+	local move 
+	repeat
+		move = math.random(9)
+	until getPlaceForIndex(board, move) == 0 
+	board = applyMove(move, board, self.playerno)
+	return board
+end
+
+--[[
+--]]
 local players = {
-	--nnplayer,
-	MinMaxPlayer(),
-	nnplayer,
-	--HumanPlayer,
+	NNPlayer(),
+	--MinMaxPlayer(),
+	--MinMaxPlayer(),
+	NNPlayer(),
+	--HumanPlayer(),
+	--HumanPlayer(),
+	--RandomPlayer(),
+	--RandomPlayer(),
 }
 local wins = {[0]=0,0,0}
 for iter=1,100 do

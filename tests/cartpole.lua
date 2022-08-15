@@ -3,7 +3,8 @@
 adapted from http://pages.cs.wisc.edu/~finton/rlpage.html
 --]]
 
-require 'ext'
+local class = require 'ext.class'
+local math = require 'ext.math'
 local gl = require 'gl'
 local GLApp = require 'glapp'
 local TDNN = require 'neuralnet.tdnn'

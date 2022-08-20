@@ -150,11 +150,7 @@ function PokerDeck:init()
 end
 
 function PokerDeck:shuffle()
-	local newCards = table()
-	while #self.cards > 0 do
-		newCards:insert(self.cards:remove(math.random(#self.cards)))
-	end
-	self.cards = newCards
+	self.cards = self.cards:shuffle()
 end
 
 local Player = class()

@@ -34,8 +34,6 @@ function QNN:getQs(state)
 	return setmetatable({unpack(self.nn.output)}, table)
 end
 
-local function pickRandom(x) return x[math.random(#x)] end
-
 -- function QNN:getReward(state, action, nextState)
 -- function QNN:applyAction(state, action)
 function QNN:getBestAction(qs)
@@ -51,7 +49,7 @@ function QNN:getBestAction(qs)
 			end
 		end
 		-- TODO or number weighting or first-best
-		return pickRandom(best)
+		return best:pickRandom()
 	end
 end
 

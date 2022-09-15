@@ -2,8 +2,7 @@
 local class = require 'ext.class'
 local table = require 'ext.table'
 local string = require 'ext.string'
-local os = require 'ext.os'
-local io = require 'ext.io'
+local file = require 'ext.file'
 local TDNN = require 'neuralnet.tdnn'
 
 math.randomseed(os.time())
@@ -79,8 +78,8 @@ local function printBoard(board)
 	print()
 end
 
-if os.fileexists(fn) then
-	minMaxs = string.split(assert(io.readfile(fn)), '\n'):map(function(l) return tonumber(l) end)
+if file(fn):exists() then
+	minMaxs = string.split(assert(file(fn):read()), '\n'):map(function(l) return tonumber(l) end)
 else
 	print('building minmax...')	
 	local minMaxTotals = {}
@@ -125,11 +124,11 @@ else
 			minMaxs[i] = minMaxs[i] / minMaxTotals[i]
 		end
 	end
-	local dir = io.getfiledir(fn)
-	if dir then
-		os.mkdir(dir)
+	local dir = file(fn):getdir()
+	if dir ~= '.' then
+		file(dir):mkdir()
 	end
-	assert(io.writefile(fn, minMaxs:concat('\n')))
+	assert(file(fn):write(minMaxs:concat('\n')))
 end
 
 local board

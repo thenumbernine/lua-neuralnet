@@ -398,4 +398,4 @@ function CartPoleGLApp:update()
 	gl.glEnd()
 	gl.glPopMatrix()
 end
-CartPoleGLApp():run()
+return CartPoleGLApp():run()

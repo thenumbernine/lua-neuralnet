@@ -126,7 +126,7 @@ else
 	end
 	local dir = path(fn):getdir()
 	if dir ~= '.' then
-		path(dir):mkdir()
+		dir:mkdir()
 	end
 	assert(path(fn):write(minMaxs:concat('\n')))
 end

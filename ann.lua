@@ -173,7 +173,7 @@ function ANN:backPropagate(dt)
 			end	
 		end
 	end
-	if not self.useBatch then
+	if self.useBatch then
 		self.totalBatchCounter = self.totalBatchCounter + 1
 		self.batchCounter = self.batchCounter + 1
 		if self.batchCounter >= self.useBatch then

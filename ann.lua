@@ -51,6 +51,7 @@ ANN.activationDeriv = tanhDeriv
 -- set to 'true' to separate the weight-delta calculation/accumulation from the weight-delta updating the weight
 ANN.useBatch = false
 ANN.batchCounter = 0
+ANN.totalBatchCounter = 0	-- keep track of which overall weight-accumulation we are on
 
 function ANN:init(...)
 	local layerSizes = {...}
@@ -170,6 +171,7 @@ function ANN:backPropagate(dt)
 					self.dw[i][j][l+1] = self.dw[i][j][l+1] + dt * self.netErr[i][j]
 				end
 			end	
+			self.totalBatchCounter = self.totalBatchCounter + 1
 			self.batchCounter = self.batchCounter + 1
 			if self.batchCounter >= self.useBatch then
 				self:updateBatch()

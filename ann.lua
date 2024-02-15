@@ -47,11 +47,19 @@ local function tanhDeriv(x,y) return 1 - y * y end
 ANN.activation = math.tanh
 ANN.activationDeriv = tanhDeriv
 
+-- false by default, 
+-- set to 'true' to separate the weight-delta calculation/accumulation from the weight-delta updating the weight
+ANN.useBatch = false
+ANN.batchCounter = 0
+
 function ANN:init(...)
 	local layerSizes = {...}
 	self.x = {}
 	self.xErr = {}
 	self.w = {}
+	if self.useBatch then
+		self.dw = {}
+	end
 	self.useBias = {}
 	self.net = {}
 	self.netErr = {}
@@ -63,6 +71,9 @@ function ANN:init(...)
 			self.useBias[i] = true
 			self.net[i] = matrix.zeros(layerSizes[i+1])
 			self.netErr[i] = matrix.zeros(layerSizes[i+1])
+			if self.useBatch then
+				self.dw[i] = matrix.zeros(layerSizes[i+1], layerSizes[i]+1)
+			end
 		end
 	end
 	self.input = self.x[1]
@@ -105,6 +116,21 @@ function ANN:calcError()
 	return .5 * s
 end
 
+function ANN:clearBatch()
+	if not self.useBatch then return end
+	for i=#self.x-1,1,-1 do
+		for j=1,#self.dw[i] do
+			local l = #self.x[i]
+			for k=1,l do
+				self.dw[i][j][k] = 0
+			end
+			if self.useBias[i] then
+				self.dw[i][j][l+1] = 0
+			end
+		end	
+	end
+end
+
 function ANN:backPropagate(dt)
 	dt = dt or 1
 	for i=#self.x-1,1,-1 do
@@ -120,17 +146,54 @@ function ANN:backPropagate(dt)
 			end
 			self.xErr[i][j] = s
 		end
+
 		-- adjust new weights
-		for j=1,#self.w[i] do
-			local l = #self.x[i]
-			for k=1,l do
-				self.w[i][j][k] = self.w[i][j][k] + dt * self.netErr[i][j] * self.x[i][k]
+		if not self.useBatch then
+			-- ... directly/immediately
+			for j=1,#self.w[i] do
+				local l = #self.x[i]
+				for k=1,l do
+					self.w[i][j][k] = self.w[i][j][k] + dt * self.netErr[i][j] * self.x[i][k]
+				end
+				if self.useBias[i] then
+					self.w[i][j][l+1] = self.w[i][j][l+1] + dt * self.netErr[i][j]
+				end
 			end
-			if self.useBias[i] then
-				self.w[i][j][l+1] = self.w[i][j][l+1] + dt * self.netErr[i][j]
+		else
+			-- ... accumulate into dw
+			for j=1,#self.dw[i] do
+				local l = #self.x[i]
+				for k=1,l do
+					self.dw[i][j][k] = self.dw[i][j][k] + dt * self.netErr[i][j] * self.x[i][k]
+				end
+				if self.useBias[i] then
+					self.dw[i][j][l+1] = self.dw[i][j][l+1] + dt * self.netErr[i][j]
+				end
+			end	
+			self.batchCounter = self.batchCounter + 1
+			if self.batchCounter >= self.useBatch then
+				self:updateBatch()
+				self.batchCounter = 0
 			end
 		end
 	end
+end
+
+-- update weights by batch ... and then clear the batch
+function ANN:updateBatch()
+	if not self.useBatch then return end
+	for i=#self.x-1,1,-1 do
+		for j=1,#self.w[i] do
+			local l = #self.x[i]
+			for k=1,l do
+				self.w[i][j][k] = self.w[i][j][k] + self.dw[i][j][k]
+			end
+			if self.useBias[i] then
+				self.w[i][j][l+1] = self.w[i][j][l+1] + self.dw[i][j][l+1]
+			end
+		end
+	end
+	self:clearBatch()
 end
 
 return ANN

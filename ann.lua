@@ -171,12 +171,14 @@ function ANN:backPropagate(dt)
 					self.dw[i][j][l+1] = self.dw[i][j][l+1] + dt * self.netErr[i][j]
 				end
 			end	
-			self.totalBatchCounter = self.totalBatchCounter + 1
-			self.batchCounter = self.batchCounter + 1
-			if self.batchCounter >= self.useBatch then
-				self:updateBatch()
-				self.batchCounter = 0
-			end
+		end
+	end
+	if not self.useBatch then
+		self.totalBatchCounter = self.totalBatchCounter + 1
+		self.batchCounter = self.batchCounter + 1
+		if self.batchCounter >= self.useBatch then
+			self:updateBatch()
+			self.batchCounter = 0
 		end
 	end
 end

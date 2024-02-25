@@ -46,6 +46,9 @@ local function tanhDeriv(x,y) return 1 - y * y end
 
 ANN.activation = math.tanh
 ANN.activationDeriv = tanhDeriv
+-- specify activation per-layer, if not found then the default is used
+ANN.perLayerActivations = {}
+ANN.perLayerActivationDerivs= {}
 
 -- false by default, 
 -- set to 'true' to separate the weight-delta calculation/accumulation from the weight-delta updating the weight
@@ -85,9 +88,10 @@ end
 
 function ANN:feedForward()
 	for i=1,#self.w do
+		local activation = self.perLayerActivations[i] or self.activation
 		multiplyWithBias(self.w[i], self.x[i], self.net[i], self.useBias[i])
 		for j=1,#self.net[i] do
-			self.x[i+1][j] = self.activation(self.net[i][j])
+			self.x[i+1][j] = activation(self.net[i][j])
 		end
 	end
 end
@@ -135,9 +139,10 @@ end
 function ANN:backPropagate(dt)
 	dt = dt or 1
 	for i=#self.x-1,1,-1 do
+		local activationDeriv = self.perLayerActivationDerivs[i] or self.activationDeriv
 		assert(#self.netErr[i] == #self.x[i+1])
 		for j=1,#self.x[i+1] do
-			self.netErr[i][j] = self.xErr[i+1][j] * self.activationDeriv(self.net[i][j], self.x[i+1][j])
+			self.netErr[i][j] = self.xErr[i+1][j] * activationDeriv(self.net[i][j], self.x[i+1][j])
 		end
 		-- back-propagate error
 		for j=1,#self.xErr[i] do

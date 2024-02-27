@@ -1,11 +1,15 @@
 #!/usr/bin/env luajit
 
-require 'ext'
+local table = require 'ext.table'
+local range = require 'ext.range'
 local gnuplot = require 'gnuplot'
 local ANN = require 'neuralnet.ann'
 
 math.randomseed(os.time())
 
+-- a xor b == (a and not b) or (not a or b)
+-- which means it'll take union of two hulls / hyperplane-collections to classify
+-- which means it'll need a hidden layer and biases to combine them
 local nn = ANN(2,2,1)
 
 local results = range(5):map(function() return table() end)

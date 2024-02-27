@@ -31,6 +31,7 @@ end
 
 --[[
 self.x[1..n]
+self.net[1..n-1]
 self.w[1..n-1]
 self.useBias[1..n-1]
 self.input

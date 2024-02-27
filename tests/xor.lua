@@ -3,9 +3,11 @@
 local table = require 'ext.table'
 local range = require 'ext.range'
 local gnuplot = require 'gnuplot'
-local ANN = require 'neuralnet.ann'
+--local ANN = require 'neuralnet.ann'
+local ANN = require 'neuralnet.ann-ffi'
 
-math.randomseed(os.time())
+--math.randomseed(os.time())
+math.randomseed(1)
 
 -- a xor b == (a and not b) or (not a or b)
 -- which means it'll take union of two hulls / hyperplane-collections to classify

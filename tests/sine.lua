@@ -28,8 +28,8 @@ local function showCurrentResult(args)
 	end
 
 	require 'gnuplot'(table({
-		terminal = 'svg size 1024,768',
-		output = 'output.svg',
+		terminal = 'png size 1024,768',
+		output = 'output.png',
 		style = 'data lines',
 		data = {xs, ys, des},
 		{using='1:2', title='approximation'},
@@ -55,20 +55,20 @@ for i=1,10000000 do
 	if log10 ~= lastLog10 then
 		lastLog10 = log10
 		showCurrentResult{
-			output = 'sine_result_'..('%.1e'):format(i)..'.svg',
+			output = 'sine_result_'..('%.1e'):format(i)..'.png',
 			title = 'results after '..('%.1e'):format(i)..' iterations',
 		}
 	end
 end
 
 require 'gnuplot'{
-	terminal = 'svg size 1024,768',
-	output = 'sine_error.svg',
+	terminal = 'png size 1024,768',
+	output = 'sine_error.png',
 	style = 'data points',
 	log = 'xy',
 	data = {results},
 	{using='0:1', title='error'},
 }
 
-showCurrentResult{output='sine_result_final.svg'}
+showCurrentResult{output='sine_result_final.png'}
 

@@ -18,10 +18,11 @@ nn.activationDeriv = function(x,y) return 1 end
 -- with both these off/identity, we are now just gradient-descent converging on complex multiplication
 -- so ofc the error goes down to machine precision quickly (in about 1000 iterations)
 
-local phi = math.pi
+-- works well for any phi
+--local phi = math.pi
 --local phi = math.pi / 2
 --local phi = math.pi / 4
---local phi = math.pi / 8
+local phi = math.pi / 8
 
 local results = table()
 for i=1,1000 do
@@ -36,10 +37,16 @@ for i=1,1000 do
 	nn:backPropagate(.1)
 end
 
+-- the result of the adjusted weights should match a rotation matrix of cos(phi), sin(phi)
+-- the 3rd col is the bias, which is ignored
+-- TODO if I initializd the network with the 'useBias's then it could skip allocation as well
+print(nn.w[1])
+print('vs', math.cos(phi), math.sin(phi))
+
 require 'gnuplot'{
 	terminal = 'png size 1024,768',
 	output = 'complex_mul.png',
-	style = 'data points',
+	style = 'data lines',
 	log = 'xy',
 	data = {results},
 	{using='0:1', title='error'},

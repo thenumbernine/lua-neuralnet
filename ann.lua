@@ -137,8 +137,9 @@ function ANN:clearBatch()
 	end
 end
 
+ANN.dt = 1
 function ANN:backPropagate(dt)
-	dt = dt or 1
+	dt = dt or self.dt
 	for i=#self.x-1,1,-1 do
 		local activationDeriv = self.perLayerActivationDerivs[i] or self.activationDeriv
 		assert(#self.netErr[i] == #self.x[i+1])

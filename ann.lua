@@ -1,4 +1,5 @@
 local matrix = require 'matrix'
+--local matrix = require 'matrix.ffi' -- still segfaults, still not a perfect replacement
 local class = require 'ext.class'
 
 local function initWeights(h, w)

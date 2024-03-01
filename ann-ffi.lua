@@ -7,9 +7,20 @@ local class = require 'ext.class'
 
 local function initWeights(h, w)
 	local m = matrix.zeros{h, w}
+	--[[ maybe faster? meh
 	for i=0,h*w-1 do
 		m.ptr[i] = math.random() * 2 - 1
 	end
+	--]]
+	-- [[ same ordering as ann.lua
+	-- using this method tests/xor.lua produces same results for ann.lua and ann-ffi.lua
+	-- tho I could just swap the ordering of ann.lua, and use the single-loop here , but meh
+	for i=0,h-1 do
+		for j=0,w-1 do
+			m.ptr[i + h * j] = math.random() * 2 - 1
+		end
+	end
+	--]]
 	return m
 end
 

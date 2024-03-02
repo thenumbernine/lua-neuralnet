@@ -3,8 +3,8 @@
 local table = require 'ext.table'
 local range = require 'ext.range'
 local gnuplot = require 'gnuplot'
---local ANN = require 'neuralnet.ann'
-local ANN = require 'neuralnet.ann-ffi'
+local ANN = require 'neuralnet.ann'
+--local ANN = require 'neuralnet.ann-ffi'
 
 --math.randomseed(os.time())
 math.randomseed(1)
@@ -21,8 +21,8 @@ for i=1,100000 do
 	local a = math.random(2) == 2
 	local b = math.random(2) == 2
 	local c = a ~= b	--xor problem.  requires two layers to solve:  (a & ~b) | (~a & b) ... or ... (a | b) & (~a | ~b) ... either is 2 operations deep <=> two layers
-	nn.input[1] = a and 1 or 0
-	nn.input[2] = b and 1 or 0
+	nn.input[1] = a and .9 or -.9
+	nn.input[2] = b and .9 or -.9
 	--print('input', nn.input)
 	--print('input weight', nn.w[1])
 	--print('mid weight', nn.w[2])
@@ -31,7 +31,7 @@ for i=1,100000 do
 	--print('mid', nn.x[2])
 	--print('net out', nn.net[2])
 	--print('out', nn.x[3])
-	nn.desired[1] = c and 1 or 0
+	nn.desired[1] = c and .9 or -.9
 	--print('desired', nn.desired)
 	local err = nn:calcError()
 	results[1]:insert(nn.input[1])

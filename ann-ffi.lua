@@ -6,7 +6,8 @@ local matrix = require 'matrix.ffi'
 local class = require 'ext.class'
 
 local function initWeights(h, w)
-	local m = matrix.zeros{h, w}
+	local m = matrix.zeros({h, w}, nil, true)
+assert(m.rowmajor)
 	--[[ maybe faster? meh
 	for i=0,h*w-1 do
 		m.ptr[i] = math.random() * 2 - 1
@@ -15,9 +16,9 @@ local function initWeights(h, w)
 	-- [[ same ordering as ann.lua
 	-- using this method tests/xor.lua produces same results for ann.lua and ann-ffi.lua
 	-- tho I could just swap the ordering of ann.lua, and use the single-loop here , but meh
-	for i=0,h-1 do
-		for j=0,w-1 do
-			m.ptr[i + h * j] = math.random() * 2 - 1
+	for j=0,w-1 do
+		for i=0,h-1 do
+			m.ptr[i * w + j] = math.random() * 2 - 1
 		end
 	end
 	--]]
@@ -32,10 +33,10 @@ local function multiplyWithBias(m, vin, vout, useBias)
 	for i=0,h-1 do
 		local s = 0
 		for j=0,w-2 do
-			s = s + m.ptr[i + h * j] * vin.ptr[j]
+			s = s + m.ptr[i * w + j] * vin.ptr[j]
 		end
 		if useBias then
-			s = s + m.ptr[i + h * (w-1)]
+			s = s + m.ptr[i * w + (w-1)]
 		end
 		vout.ptr[i] = s
 	end
@@ -80,22 +81,22 @@ function ANN:init(...)
 	self.net = {}
 	self.netErr = {}
 	for i=1,#layerSizes do
-		self.x[i] = matrix.zeros{layerSizes[i]}
-		self.xErr[i] = matrix.zeros{layerSizes[i]}
+		self.x[i] = matrix.zeros({layerSizes[i]}, nil, true)
+		self.xErr[i] = matrix.zeros({layerSizes[i]}, nil, true)
 		if i<#layerSizes then
 			self.w[i] = initWeights(layerSizes[i+1], layerSizes[i]+1)
 			self.useBias[i] = true
-			self.net[i] = matrix.zeros{layerSizes[i+1]}
-			self.netErr[i] = matrix.zeros{layerSizes[i+1]}
+			self.net[i] = matrix.zeros({layerSizes[i+1]}, nil, true)
+			self.netErr[i] = matrix.zeros({layerSizes[i+1]}, nil, true)
 			if self.useBatch then
-				self.dw[i] = matrix.zeros{layerSizes[i+1], layerSizes[i]+1}
+				self.dw[i] = matrix.zeros({layerSizes[i+1], layerSizes[i]+1}, nil, true)
 			end
 		end
 	end
 	self.input = self.x[1]
 	self.output = self.x[#self.x]
 	self.outputError = self.xErr[#self.xErr]
-	self.desired = matrix.zeros{#self.output}
+	self.desired = matrix.zeros({#self.output}, nil, true)
 end
 
 function ANN:feedForward()
@@ -136,13 +137,10 @@ end
 function ANN:clearBatch()
 	if not self.useBatch then return end
 	for i=#self.x-1,1,-1 do
-		for j=1,#self.dw[i] do
+		for j=0,#self.dw[i]-1 do
 			local w = #self.x[i]
-			for k=0,w-1 do
-				self.dw[i].ptr[j + h * k] = 0
-			end
-			if self.useBias[i] then
-				self.dw[i].ptr[j + h * w] = 0
+			for k=0,w do
+				self.dw[i].ptr[j * (w+1) + k] = 0
 			end
 		end	
 	end
@@ -162,7 +160,7 @@ function ANN:backPropagate(dt)
 		for j=0,w-1 do
 			local s = 0
 			for k=0,h-1 do
-				s = s + self.w[i].ptr[k + h * j] * self.netErr[i].ptr[k]
+				s = s + self.w[i].ptr[k * (w+1) + j] * self.netErr[i].ptr[k]
 			end
 			self.xErr[i].ptr[j] = s
 		end
@@ -172,24 +170,24 @@ function ANN:backPropagate(dt)
 			-- ... directly/immediately
 			for k=0,w-1 do
 				for j=0,h-1 do
-					self.w[i].ptr[j + h * k] = self.w[i].ptr[j + h * k] + dt * self.netErr[i].ptr[j] * self.x[i].ptr[k]
+					self.w[i].ptr[j * (w+1) + k] = self.w[i].ptr[j + h * k] + dt * self.netErr[i].ptr[j] * self.x[i].ptr[k]
 				end
 			end
 			if self.useBias[i] then
 				for j=0,h-1 do
-					self.w[i].ptr[j + h * w] = self.w[i].ptr[j + h * w] + dt * self.netErr[i].ptr[j]
+					self.w[i].ptr[j * (w+1) + w] = self.w[i].ptr[j + h * w] + dt * self.netErr[i].ptr[j]
 				end
 			end
 		else
 			-- ... accumulate into dw
 			for k=0,w-1 do
 				for j=0,h-1 do
-					self.dw[i].ptr[j + h * k] = self.dw[i].ptr[j + h * k] + dt * self.netErr[i].ptr[j] * self.x[i].ptr[k]
+					self.dw[i].ptr[j * (w+1) + k] = self.dw[i].ptr[j + h * k] + dt * self.netErr[i].ptr[j] * self.x[i].ptr[k]
 				end
 			end
 			if self.useBias[i] then
 				for j=0,h-1 do
-					self.dw[i].ptr[j + h * w] = self.dw[i].ptr[j + h * w] + dt * self.netErr[i].ptr[j]
+					self.dw[i].ptr[j * (w+1) + w] = self.dw[i].ptr[j + h * w] + dt * self.netErr[i].ptr[j]
 				end
 			end
 		end
@@ -208,11 +206,8 @@ end
 function ANN:updateBatch()
 	if not self.useBatch then return end
 	for i=#self.x-1,1,-1 do
-		local w = #self.x[i]
+		local w = #self.x[i]+1
 		local h = #self.netErr[i]
-		if self.useBias[i] then
-			w = w + 1
-		end
 		for jk=0,w*h-1 do
 			self.w[i].ptr[jk] = self.w[i].ptr[jk] + self.dw[i].ptr[jk]
 		end

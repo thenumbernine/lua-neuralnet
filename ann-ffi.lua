@@ -2,6 +2,7 @@
 copy of my ann.lua class but using matrix.ffi instead to hopefully speed things up a bit 
 but I'm only seeing a 3% increase in speed (For very small networks, like the xor problem...)
 --]]
+local ffi = require 'ffi'
 local matrix = require 'matrix.ffi'
 local class = require 'ext.class'
 local asserteq = require 'ext.assert'.eq

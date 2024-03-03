@@ -4,41 +4,35 @@ but I'm only seeing a 3% increase in speed (For very small networks, like the xo
 --]]
 local matrix = require 'matrix.ffi'
 local class = require 'ext.class'
+local asserteq = require 'ext.assert'.eq
+local assertne = require 'ext.assert'.ne
 
+local rowmajor = true
 local function initWeights(h, w)
-	local m = matrix.zeros({h, w}, nil, true)
-assert(m.rowmajor)
-	--[[ maybe faster? meh
-	for i=0,h*w-1 do
-		m.ptr[i] = math.random() * 2 - 1
+	local m = matrix.zeros({h, w}, nil, rowmajor)
+	for ij=0,w*h-1 do
+		m.ptr[ij] = math.random() * 2 - 1
 	end
-	--]]
-	-- [[ same ordering as ann.lua
-	-- using this method tests/xor.lua produces same results for ann.lua and ann-ffi.lua
-	-- tho I could just swap the ordering of ann.lua, and use the single-loop here , but meh
-	for j=0,w-1 do
-		for i=0,h-1 do
-			m.ptr[i * w + j] = math.random() * 2 - 1
-		end
-	end
-	--]]
 	return m
 end
 
 -- c_i = a_ij b_j
 local function multiplyWithBias(m, vin, vout, useBias)
+	local mptr = m.ptr
+	local vinptr = vin.ptr
+	local voutptr = vout.ptr
 	local h, w = m.size_:unpack()
-	if w ~= #vin+1 then error("expected weights width "..w.." to equal input size "..#vin.." + 1") end
-	assert(h == #vout)
+	asserteq(w, #vin + 1)
+	asserteq(h, #vout)
 	for i=0,h-1 do
 		local s = 0
 		for j=0,w-2 do
-			s = s + m.ptr[i * w + j] * vin.ptr[j]
+			s = s + mptr[i * w + j] * vinptr[j]
 		end
 		if useBias then
-			s = s + m.ptr[i * w + (w-1)]
+			s = s + mptr[i * w + (w-1)]
 		end
-		vout.ptr[i] = s
+		voutptr[i] = s
 	end
 end
 
@@ -81,22 +75,22 @@ function ANN:init(...)
 	self.net = {}
 	self.netErr = {}
 	for i=1,#layerSizes do
-		self.x[i] = matrix.zeros({layerSizes[i]}, nil, true)
-		self.xErr[i] = matrix.zeros({layerSizes[i]}, nil, true)
+		self.x[i] = matrix.zeros({layerSizes[i]}, nil, rowmajor)
+		self.xErr[i] = matrix.zeros({layerSizes[i]}, nil, rowmajor)
 		if i<#layerSizes then
 			self.w[i] = initWeights(layerSizes[i+1], layerSizes[i]+1)
 			self.useBias[i] = true
-			self.net[i] = matrix.zeros({layerSizes[i+1]}, nil, true)
-			self.netErr[i] = matrix.zeros({layerSizes[i+1]}, nil, true)
+			self.net[i] = matrix.zeros({layerSizes[i+1]}, nil, rowmajor)
+			self.netErr[i] = matrix.zeros({layerSizes[i+1]}, nil, rowmajor)
 			if self.useBatch then
-				self.dw[i] = matrix.zeros({layerSizes[i+1], layerSizes[i]+1}, nil, true)
+				self.dw[i] = matrix.zeros({layerSizes[i+1], layerSizes[i]+1}, nil, rowmajor)
 			end
 		end
 	end
 	self.input = self.x[1]
 	self.output = self.x[#self.x]
 	self.outputError = self.xErr[#self.xErr]
-	self.desired = matrix.zeros({#self.output}, nil, true)
+	self.desired = matrix.zeros({#self.output}, nil, rowmajor)
 end
 
 function ANN:feedForward()
@@ -124,7 +118,7 @@ dnet_n,i/dx_n,j = w_n,i,j
 dnet_n,i/dw_n,ij = x_n,j, all others are zero
 --]]
 function ANN:calcError()
-	assert(#self.desired == #self.outputError)
+	asserteq(#self.desired, #self.outputError)
 	local s = 0
 	for i=0,#self.outputError-1 do
 		local delta = self.desired.ptr[i] - self.output.ptr[i]
@@ -137,30 +131,37 @@ end
 function ANN:clearBatch()
 	if not self.useBatch then return end
 	for i=#self.x-1,1,-1 do
-		for j=0,#self.dw[i]-1 do
-			local w = #self.x[i]
-			for k=0,w do
-				self.dw[i].ptr[j * (w+1) + k] = 0
-			end
-		end	
+		local dw = self.dw[i]
+		local h, w = table.unpack(dw.size_)
+		asserteq(w, #self.x[i] + 1)
+		ffi.fill(dw.ptr, ffi.sizeof(dw.ctype) * w * h)
 	end
 end
 
 function ANN:backPropagate(dt)
 	dt = dt or 1
 	for i=#self.x-1,1,-1 do
+		local weight = self.w[i]
+		local wptr = weight.ptr
+		local dweight
+		local dwptr
+		if self.dw then
+			dweight = self.dw[i]
+			dwptr = dweight.ptr
+		end
 		local activationDeriv = self.perLayerActivationDerivs[i] or self.activationDeriv
-		assert(#self.netErr[i] == #self.x[i+1])
-		local w = #self.x[i]
-		local h = #self.netErr[i]
+		asserteq(#self.netErr[i], #self.x[i+1])
+		--local w = #self.x[i]
+		--local h = #self.netErr[i]
+		local h, w = table.unpack(weight.size_)
 		for j=0,h-1 do
 			self.netErr[i].ptr[j] = self.xErr[i+1].ptr[j] * activationDeriv(self.net[i].ptr[j], self.x[i+1].ptr[j])
 		end
 		-- back-propagate error
-		for j=0,w-1 do
+		for j=0,w-2 do
 			local s = 0
 			for k=0,h-1 do
-				s = s + self.w[i].ptr[k * (w+1) + j] * self.netErr[i].ptr[k]
+				s = s + wptr[k * w + j] * self.netErr[i].ptr[k]
 			end
 			self.xErr[i].ptr[j] = s
 		end
@@ -168,26 +169,26 @@ function ANN:backPropagate(dt)
 		-- adjust new weights
 		if not self.useBatch then
 			-- ... directly/immediately
-			for k=0,w-1 do
+			for k=0,w-2 do
 				for j=0,h-1 do
-					self.w[i].ptr[j * (w+1) + k] = self.w[i].ptr[j + h * k] + dt * self.netErr[i].ptr[j] * self.x[i].ptr[k]
+					wptr[j * w + k] = wptr[j * w + k] + dt * self.netErr[i].ptr[j] * self.x[i].ptr[k]
 				end
 			end
 			if self.useBias[i] then
 				for j=0,h-1 do
-					self.w[i].ptr[j * (w+1) + w] = self.w[i].ptr[j + h * w] + dt * self.netErr[i].ptr[j]
+					wptr[j * w + (w-1)] = wptr[j * w + (w-1)] + dt * self.netErr[i].ptr[j]
 				end
 			end
 		else
 			-- ... accumulate into dw
-			for k=0,w-1 do
+			for k=0,w-2 do
 				for j=0,h-1 do
-					self.dw[i].ptr[j * (w+1) + k] = self.dw[i].ptr[j + h * k] + dt * self.netErr[i].ptr[j] * self.x[i].ptr[k]
+					dwptr[j * w + k] = dwptr[j * w + k] + dt * self.netErr[i].ptr[j] * self.x[i].ptr[k]
 				end
 			end
 			if self.useBias[i] then
 				for j=0,h-1 do
-					self.dw[i].ptr[j * (w+1) + w] = self.dw[i].ptr[j + h * w] + dt * self.netErr[i].ptr[j]
+					dwptr[j * w + (w-1)] = dwptr[j * w + (w-1)] + dt * self.netErr[i].ptr[j]
 				end
 			end
 		end
@@ -206,10 +207,13 @@ end
 function ANN:updateBatch()
 	if not self.useBatch then return end
 	for i=#self.x-1,1,-1 do
-		local w = #self.x[i]+1
-		local h = #self.netErr[i]
+		local weight = self.w[i]
+		local wptr = weight.ptr
+		local dweight = self.dw[i]
+		local dwptr = dweight.ptr
+		local h, w = table.unpack(weight.size_)
 		for jk=0,w*h-1 do
-			self.w[i].ptr[jk] = self.w[i].ptr[jk] + self.dw[i].ptr[jk]
+			wptr[jk] = wptr[jk] + dwptr[jk]
 		end
 	end
 	self:clearBatch()

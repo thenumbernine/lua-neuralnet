@@ -10,8 +10,9 @@ local assertne = require 'ext.assert'.ne
 local rowmajor = true
 local function initWeights(h, w)
 	local m = matrix.zeros({h, w}, nil, rowmajor)
+	local mptr = m.ptr
 	for ij=0,w*h-1 do
-		m.ptr[ij] = math.random() * 2 - 1
+		mptr[ij] = math.random() * 2 - 1
 	end
 	return m
 end
@@ -97,8 +98,10 @@ function ANN:feedForward()
 	for i=1,#self.w do
 		local activation = self.perLayerActivations[i] or self.activation
 		multiplyWithBias(self.w[i], self.x[i], self.net[i], self.useBias[i])
+		local netptr = self.net[i].ptr
+		local xptr = self.x[i+1].ptr
 		for j=0,#self.net[i]-1 do
-			self.x[i+1].ptr[j] = activation(self.net[i].ptr[j])
+			xptr[j] = activation(netptr[j])
 		end
 	end
 end
@@ -119,10 +122,13 @@ dnet_n,i/dw_n,ij = x_n,j, all others are zero
 --]]
 function ANN:calcError()
 	asserteq(#self.desired, #self.outputError)
+	local desiredptr = self.desired.ptr
+	local outputptr = self.output.ptr
+	local outputErrorptr = self.outputError.ptr
 	local s = 0
 	for i=0,#self.outputError-1 do
-		local delta = self.desired.ptr[i] - self.output.ptr[i]
-		self.outputError.ptr[i] = delta
+		local delta = desiredptr[i] - outputptr[i]
+		outputErrorptr[i] = delta
 		s = s + delta * delta
 	end
 	return .5 * s
@@ -143,6 +149,7 @@ function ANN:backPropagate(dt)
 	for i=#self.x-1,1,-1 do
 		local weight = self.w[i]
 		local wptr = weight.ptr
+		local h, w = table.unpack(weight.size_)
 		local dweight
 		local dwptr
 		if self.dw then
@@ -150,20 +157,26 @@ function ANN:backPropagate(dt)
 			dwptr = dweight.ptr
 		end
 		local activationDeriv = self.perLayerActivationDerivs[i] or self.activationDeriv
-		asserteq(#self.netErr[i], #self.x[i+1])
+		local nextxptr = self.x[i+1].ptr
+		local xptr = self.x[i].ptr
+		local netptr = self.net[i].ptr
+		local netErr = self.netErr[i]
+		asserteq(#netErr, #self.x[i+1])
+		local netErrptr = netErr.ptr
 		--local w = #self.x[i]
-		--local h = #self.netErr[i]
-		local h, w = table.unpack(weight.size_)
+		--local h = #netErr
+		local nextxErrptr = self.xErr[i+1].ptr
 		for j=0,h-1 do
-			self.netErr[i].ptr[j] = self.xErr[i+1].ptr[j] * activationDeriv(self.net[i].ptr[j], self.x[i+1].ptr[j])
+			netErrptr[j] = nextxErrptr[j] * activationDeriv(netptr[j], nextxptr[j])
 		end
 		-- back-propagate error
+		local xErrptr = self.xErr[i].ptr
 		for j=0,w-2 do
 			local s = 0
 			for k=0,h-1 do
-				s = s + wptr[k * w + j] * self.netErr[i].ptr[k]
+				s = s + wptr[k * w + j] * netErrptr[k]
 			end
-			self.xErr[i].ptr[j] = s
+			xErrptr[j] = s
 		end
 
 		-- adjust new weights
@@ -171,24 +184,24 @@ function ANN:backPropagate(dt)
 			-- ... directly/immediately
 			for k=0,w-2 do
 				for j=0,h-1 do
-					wptr[j * w + k] = wptr[j * w + k] + dt * self.netErr[i].ptr[j] * self.x[i].ptr[k]
+					wptr[j * w + k] = wptr[j * w + k] + dt * netErrptr[j] * xptr[k]
 				end
 			end
 			if self.useBias[i] then
 				for j=0,h-1 do
-					wptr[j * w + (w-1)] = wptr[j * w + (w-1)] + dt * self.netErr[i].ptr[j]
+					wptr[j * w + (w-1)] = wptr[j * w + (w-1)] + dt * netErrptr[j]
 				end
 			end
 		else
 			-- ... accumulate into dw
 			for k=0,w-2 do
 				for j=0,h-1 do
-					dwptr[j * w + k] = dwptr[j * w + k] + dt * self.netErr[i].ptr[j] * self.x[i].ptr[k]
+					dwptr[j * w + k] = dwptr[j * w + k] + dt * netErrptr[j] * xptr[k]
 				end
 			end
 			if self.useBias[i] then
 				for j=0,h-1 do
-					dwptr[j * w + (w-1)] = dwptr[j * w + (w-1)] + dt * self.netErr[i].ptr[j]
+					dwptr[j * w + (w-1)] = dwptr[j * w + (w-1)] + dt * netErrptr[j]
 				end
 			end
 		end

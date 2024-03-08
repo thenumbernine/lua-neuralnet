@@ -17,7 +17,7 @@ local function multiplyWithBias(m, vin, vout, useBias)
 	local h = #m
 	local w = #m[1]
 	if w ~= #vin+1 then error("expected weights width "..w.." to equal input size "..#vin.." + 1") end
-	assert(h == #vout)
+	if h ~= #vout then error("expected weights height "..h.." to equal output size "..#vout) end
 	for i=1,h do
 		local s = 0
 		for j=1,w-1 do
@@ -89,11 +89,34 @@ function ANN:init(...)
 end
 
 function ANN:feedForward()
-	for i=1,#self.w do
-		local activation = self.perLayerActivations[i] or self.activation
-		multiplyWithBias(self.w[i], self.x[i], self.net[i], self.useBias[i])
-		for j=1,#self.net[i] do
-			self.x[i+1][j] = activation(self.net[i][j])
+	for k=1,#self.w do
+		--[[
+		multiplyWithBias(self.w[k], self.x[k], self.net[k], self.useBias[k])
+		--]]
+		-- [[ inline is usu faster
+		local m = self.w[k]
+		local vin = self.x[k]
+		local vout = self.net[k]
+		local useBias = self.useBias[k]
+		local h = #m
+		local w = #m[1]
+		if w ~= #vin+1 then error("expected weights width "..w.." to equal input size "..#vin.." + 1") end
+		if h ~= #vout then error("expected weights height "..h.." to equal output size "..#vout) end
+		for i=1,h do
+			local s = 0
+			for j=1,w-1 do
+				s = s + m[i][j] * vin[j]
+			end
+			if useBias then
+				s = s + m[i][w]
+			end
+			vout[i] = s
+		end
+		--]]
+
+		local activation = self.perLayerActivations[k] or self.activation
+		for i=1,#self.net[k] do
+			self.x[k+1][i] = activation(self.net[k][i])
 		end
 	end
 end

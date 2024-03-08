@@ -12,8 +12,14 @@ local rowmajor = true
 local function initWeights(h, w)
 	local m = matrix.zeros({h, w}, nil, rowmajor)
 	local mptr = m.ptr
-	for ij=0,w*h-1 do
-		mptr[ij] = math.random() * 2 - 1
+	for i=0,h-1 do
+		for j=0,w-1 do
+			if rowmajor then
+				mptr[i * w + j] = math.random() * 2 - 1
+			else
+				mptr[i + h * j] = math.random() * 2 - 1
+			end
+		end
 	end
 	return m
 end
@@ -145,8 +151,9 @@ function ANN:clearBatch()
 	end
 end
 
+ANN.dt = 1
 function ANN:backPropagate(dt)
-	dt = dt or 1
+	dt = dt or self.dt
 	for i=#self.x-1,1,-1 do
 		local weight = self.w[i]
 		local wptr = weight.ptr

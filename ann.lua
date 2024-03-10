@@ -48,32 +48,7 @@ local function multiplyWithBias(m, vin, vout, useBias)
 	end
 end
 
-local function tanhDeriv(x,y) return 1 - y * y end
-
-ANN.activation = math.tanh
-ANN.activationDeriv = tanhDeriv
-
---[[ useful maybe? tanh cubic approximated across [-2.5,0],[0,2.5]
--- it is slightly below tanh(x) on the interval (0, 2.5-epsilon)
-local function tanhCubic(x)
-	if x < 0 then return -tanhCubic(-x) end
-	if x <= 2.5 then
-		return x * (1 + x * (-0.32 + x * 0.032))
-	end
-	return 1
-end
-local function tanhCubicDeriv(x,y)
-	if x < 0 then return -tanhCubicDeriv(-x,-y) end
-	if x < 2.5 then
-		return 1 + x * (-.64 + x * .096)
-	end
-	return 0
-end
---]]
---[[ TODO 3-part tanh, [-x, -.5],[-.5,.5],[.5, x]
--- but for x=2.5 it goes a lot above tanh(x) and even above 1 ...
--- TODO minimize integral(tanh(x) - cubic(x), x=x1 to x2) ...
---]]
+ANN.activation, ANN.activationDeriv = table.unpack(require 'neuralnet.activation'.tanh)
 
 -- specify activation per-layer, if not found then the default is used
 ANN.perLayerActivations = {}

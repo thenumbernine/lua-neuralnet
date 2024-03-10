@@ -65,10 +65,8 @@ local function multiplyWithBias(m, vin, vout, useBias)
 	end
 end
 
-local function tanhDeriv(x,y) return 1 - y * y end
+ANN.activation, ANN.activationDeriv = table.unpack(require 'neuralnet.activation'.tanh)
 
-ANN.activation = math.tanh
-ANN.activationDeriv = tanhDeriv
 -- specify activation per-layer, if not found then the default is used
 ANN.perLayerActivations = {}
 ANN.perLayerActivationDerivs= {}

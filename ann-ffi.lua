@@ -25,7 +25,9 @@ local rowmajor = true
 
 -- since just getmetatable(nn.w) isn't enough to preserve rowmajor etc
 function ANN:newMatrix(...)
-	return matrix.zeros({...}, nil, rowmajor)
+	local m = matrix.zeros({...}, nil, rowmajor)
+	asserteq(m.rowmajor, rowmajor)
+	return m
 end
 
 function ANN:newWeights(h, w)

@@ -2,6 +2,18 @@
 
 local function tanhDeriv(x,y) return 1 - y * y end
 
+local function poorLinearTanh(x)
+	return x < -1 and -1
+	or x < 1 and x
+	or 1
+end
+
+local function poorLinearTanhDeriv(x)
+	return x < -1 and 0
+	or x < 1 and 1
+	or 0
+end
+
 local function poorQuadraticTanh(x)
 	return x < -2 and -1 
 	or x < 0 and x * (1 + .25*x)
@@ -49,13 +61,16 @@ array contains:
 --]]
 return {
 	tanh = {math.tanh, tanhDeriv, -.9, .9, 'math.tanh(x)', '1 - y * y'},
-	poorCubicTanh = {poorCubicTanh, poorCubicTanhDeriv, -.9, .9},
+	poorLinearTanh = {poorLinearTanh, poorLinearTanhDeriv, -.9, .9},
 	poorQuadraticTanh = {poorQuadraticTanh, poorQuadraticTanhDeriv, -.9, .9},
+	poorCubicTanh = {poorCubicTanh, poorCubicTanhDeriv, -.9, .9},
 
 	-- in case you want to access the funcs by name
 	funcs = {
 		tanh = math.tanh,
 		tanhDeriv = tanhDeriv,
+		poorLinearTanh = poorLinearTanh,
+		poorLinearTanhDeriv = poorLinearTanhDeriv,
 		poorQuadraticTanh = poorQuadraticTanh,
 		poorQuadraticTanhDeriv = poorQuadraticTanhDeriv,
 		poorCubicTanh = poorCubicTanh,

@@ -2,8 +2,26 @@ local matrix = require 'matrix'
 --local matrix = require 'matrix.ffi' -- still segfaults, still not a perfect replacement
 local class = require 'ext.class'
 
-local function initWeights(h, w)
-	local m = matrix.zeros(h, w)
+--[[
+self.x[1..n]
+self.net[1..n-1]
+self.w[1..n-1]
+self.useBias[1..n-1]
+self.input
+self.output
+self.xErr[1..n]
+self.netErr[1..n]
+self.outputError
+self.desired
+--]]
+local ANN = class()
+
+function ANN:newMatrix(...)
+	return matrix.zeros(...)
+end
+
+function ANN:newWeights(h, w)
+	local m = self:newMatrix(h, w)
 	for i=1,h do
 		for j=1,w do
 			m[i][j] = math.random() * 2 - 1
@@ -30,29 +48,38 @@ local function multiplyWithBias(m, vin, vout, useBias)
 	end
 end
 
---[[
-self.x[1..n]
-self.net[1..n-1]
-self.w[1..n-1]
-self.useBias[1..n-1]
-self.input
-self.output
-self.xErr[1..n]
-self.netErr[1..n]
-self.outputError
-self.desired
---]]
-local ANN = class()
-
 local function tanhDeriv(x,y) return 1 - y * y end
 
 ANN.activation = math.tanh
 ANN.activationDeriv = tanhDeriv
+
+--[[ useful maybe? tanh cubic approximated across [-2.5,0],[0,2.5]
+-- it is slightly below tanh(x) on the interval (0, 2.5-epsilon)
+local function tanhCubic(x)
+	if x < 0 then return -tanhCubic(-x) end
+	if x <= 2.5 then
+		return x * (1 + x * (-0.32 + x * 0.032))
+	end
+	return 1
+end
+local function tanhCubicDeriv(x,y)
+	if x < 0 then return -tanhCubicDeriv(-x,-y) end
+	if x < 2.5 then
+		return 1 + x * (-.64 + x * .096)
+	end
+	return 0
+end
+--]]
+--[[ TODO 3-part tanh, [-x, -.5],[-.5,.5],[.5, x]
+-- but for x=2.5 it goes a lot above tanh(x) and even above 1 ...
+-- TODO minimize integral(tanh(x) - cubic(x), x=x1 to x2) ...
+--]]
+
 -- specify activation per-layer, if not found then the default is used
 ANN.perLayerActivations = {}
 ANN.perLayerActivationDerivs= {}
 
--- false by default, 
+-- false by default,
 -- set to 'true' to separate the weight-delta calculation/accumulation from the weight-delta updating the weight
 ANN.useBatch = false
 ANN.batchCounter = 0
@@ -70,22 +97,22 @@ function ANN:init(...)
 	self.net = {}
 	self.netErr = {}
 	for i=1,#layerSizes do
-		self.x[i] = matrix.zeros(layerSizes[i])
-		self.xErr[i] = matrix.zeros(layerSizes[i])
+		self.x[i] = self:newMatrix(layerSizes[i])
+		self.xErr[i] = self:newMatrix(layerSizes[i])
 		if i<#layerSizes then
-			self.w[i] = initWeights(layerSizes[i+1], layerSizes[i]+1)
+			self.w[i] = self:newWeights(layerSizes[i+1], layerSizes[i]+1)
 			self.useBias[i] = true
-			self.net[i] = matrix.zeros(layerSizes[i+1])
-			self.netErr[i] = matrix.zeros(layerSizes[i+1])
+			self.net[i] = self:newMatrix(layerSizes[i+1])
+			self.netErr[i] = self:newMatrix(layerSizes[i+1])
 			if self.useBatch then
-				self.dw[i] = matrix.zeros(layerSizes[i+1], layerSizes[i]+1)
+				self.dw[i] = self:newMatrix(layerSizes[i+1], layerSizes[i]+1)
 			end
 		end
 	end
 	self.input = self.x[1]
 	self.output = self.x[#self.x]
 	self.outputError = self.xErr[#self.xErr]
-	self.desired = matrix.zeros(#self.output)
+	self.desired = self:newMatrix(#self.output)
 end
 
 function ANN:feedForward()
@@ -123,7 +150,7 @@ end
 
 --[[
 values:
-	
+
 e = 1/2 sum_i (d_i - x_n,i)^2
 x_n,i = f(net_n-1,i)
 net_n,i = w_n,i,j * x_n,j
@@ -157,7 +184,7 @@ function ANN:clearBatch()
 			if self.useBias[i] then
 				self.dw[i][j][l+1] = 0
 			end
-		end	
+		end
 	end
 end
 
@@ -201,7 +228,7 @@ function ANN:backPropagate(dt)
 				if self.useBias[i] then
 					self.dw[i][j][l+1] = self.dw[i][j][l+1] + dt * self.netErr[i][j]
 				end
-			end	
+			end
 		end
 	end
 	if self.useBatch then

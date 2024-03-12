@@ -1,7 +1,6 @@
 #!/usr/bin/env luajit
 local ANN = require 'neuralnet.ann'
 local ANNFFI = require 'neuralnet.ann-ffi'
-local numIter = 10000
 for _,info in ipairs{
 	{name='ann', cl=ANN},
 	{name='ann-ffi', cl=ANNFFI},
@@ -29,15 +28,8 @@ for _,info in ipairs{
 	for i=1,#nn.input do
 		nn.input[i] = src()
 	end
-	for i=1,numIter do
-		nn:feedForward()
-		nn.desired[1] = src()
-		nn.desired[2] = src()
-		nn:backPropagate()
-	end
-	for i=1,numIter do
-		nn:feedForward()
-	end
+	
+	nn:feedForward()
 	
 	print()
 	print('input', nn.input)
@@ -51,6 +43,9 @@ for _,info in ipairs{
 
 	nn.desired[1] = src()
 	nn.desired[2] = src()
+	print('desired', nn.desired)
+	print('desired L1 norm', nn.desired:normL1())
+	nn:calcError()
 	nn:backPropagate()
 	print('input error ', nn.xErr[1])
 	print('input error L1 norm', nn.xErr[1]:normL1())

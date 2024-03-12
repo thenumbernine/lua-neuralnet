@@ -68,6 +68,7 @@ for _,info in ipairs{
 				nn:feedForward()
 				nn.desired[1] = math.random()
 				nn.desired[2] = math.random()
+				nn:calcError()
 				nn:backPropagate()
 			end
 		end)

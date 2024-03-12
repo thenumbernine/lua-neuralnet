@@ -113,34 +113,67 @@ function ANN:feedForward()
 		multiplyWithBias(self.w[k], self.x[k], self.net[k], self.useBias[k])
 		--]]
 		-- [[ inline
-		local m = self.w[k]
-		local vin = self.x[k]
-		local vout = self.net[k]
+		local xk = self.x[k]
+		local netk = self.net[k]
 		local useBias = self.useBias[k]
-		local mptr = m.ptr
-		local vinptr = vin.ptr
-		local voutptr = vout.ptr
-		local h, w = m.size_:unpack()
---DEBUG: asserteq(w, #vin + 1)
---DEBUG: asserteq(h, #vout)
+		local mptr = self.w[k].ptr
+		local xkptr = xk.ptr
+		local netkptr = netk.ptr
+		local h, w = self.w[k].size_:unpack()
+--DEBUG: asserteq(w, #xk + 1)
+--DEBUG: asserteq(h, #netk)
+		local activation = self.perLayerActivations[k] or self.activation
 		for i=0,h-1 do
 			local s = 0
 			for j=0,w-2 do
-				s = s + mptr[i * w + j] * vinptr[j]
+				s = s + mptr[i * w + j] * xkptr[j]
 			end
 			if useBias then
 				s = s + mptr[i * w + (w-1)]
 			end
-			voutptr[i] = s
+			netkptr[i] = s
 		end
-		--]]
-
-		local activation = self.perLayerActivations[k] or self.activation
 		local netptr = self.net[k].ptr
 		local xptr = self.x[k+1].ptr
 		for i=0,#self.net[k]-1 do
 			xptr[i] = activation(netptr[i])
+		end	
+		--]]
+		--[[ inline more ... the more I inline / make native the operations, the slower luajit goes ...
+		local m = self.w[k]
+		local useBias = self.useBias[k]
+		local activation = self.perLayerActivations[k] or self.activation
+		local mijptr = m.ptr
+--DEBUG: asserteq(m.size_[2], #self.x[k] + 1)
+--DEBUG: asserteq(m.size_[1], #self.net[k])
+		local xptr = self.x[k].ptr
+		local xendptr = xptr + m.size_[2] - 1	-- stop short of the bias
+		local netiptr = self.net[k].ptr
+		local netiendptr = netiptr + m.size_[1]
+		local yiptr = self.x[k+1].ptr
+		while netiptr < netiendptr  do
+			local xjptr = xptr
+			netiptr[0] = mijptr[0] * xjptr[0]
+			mijptr = mijptr + 1ULL
+			xjptr = xjptr + 1ULL
+			while xjptr < xendptr do
+				netiptr[0] = netiptr[0] + mijptr[0] * xjptr[0]
+				mijptr = mijptr + 1ULL
+				xjptr = xjptr + 1ULL
+			end
+			if useBias then
+				netiptr[0] = netiptr[0] + mijptr[0]
+			end
+			mijptr = mijptr + 1ULL
+			yiptr[0] = activation(netiptr[0])
+			netiptr = netiptr + 1ULL
+			yiptr = yiptr + 1ULL
 		end
+--DEBUG: asserteq(mijptr, m.ptr + m.size_[2] * m.size_[1])
+--DEBUG: asserteq(netiptr, self.net[k].ptr + m.size_[1])
+--DEBUG: asserteq(yiptr, self.x[k+1].ptr + m.size_[1])
+		--]]
+
 	end
 end
 

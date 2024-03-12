@@ -3,8 +3,8 @@
 local table = require 'ext.table'
 local range = require 'ext.range'
 local gnuplot = require 'gnuplot'
-local ANN = require 'neuralnet.ann'
---local ANN = require 'neuralnet.ann-ffi'
+--local ANN = require 'neuralnet.ann'
+local ANN = require 'neuralnet.ann-ffi'
 
 --math.randomseed(os.time())
 math.randomseed(1)

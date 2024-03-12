@@ -10,9 +10,12 @@ for _,info in ipairs{
 	local function src()
 		i = i + 1
 		return math.sin(1/i)
+		--return math.random() * 2 - 1
 	end
 
 	local nn = info.cl(222, 80, 40, 2)
+	nn.activation = function(x) return x end
+	nn.activationDeriv = function(x) return 1 end
 	for k,w in ipairs(nn.w) do
 		local height, width = w:size():unpack()
 		for i=1,height do
@@ -45,4 +48,10 @@ for _,info in ipairs{
 	print('hidden L1 norm', nn.x[3]:normL1())
 	print('output', nn.output)
 	print('output L1 norm', nn.output:normL1())
+
+	nn.desired[1] = src()
+	nn.desired[2] = src()
+	nn:backPropagate()
+	print('input error ', nn.xErr[1])
+	print('input error L1 norm', nn.xErr[1]:normL1())
 end

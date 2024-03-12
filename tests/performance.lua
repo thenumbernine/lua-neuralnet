@@ -44,6 +44,8 @@ ann-ffi...
 ...done ann-ffi (2.2207000255585s)
 
 so ann-ffi is only beneficial for larger networks
+and any attempt to 'optimize' it makes it go slower
+luajit is weird
 --]]
 local timer = require 'ext.timer'.timer
 local ANN = require 'neuralnet.ann'

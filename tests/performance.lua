@@ -50,14 +50,24 @@ luajit is weird
 local timer = require 'ext.timer'.timer
 local numIter = 10000
 
--- [[
 for _,info in ipairs{
-	{name='ann', cl=require 'neuralnet.ann'},
-	{name='ann-ffi', cl=require 'neuralnet.ann-ffi'},
+	{name='ann', ctor=require 'neuralnet.ann'},
+	{name='ann-ffi', ctor=require 'neuralnet.ann-ffi'},
+
+	-- the C++ version has a slightly dif API since it groups the layer stuff into sub-objects.
+	-- I didn't do this in Lua because more tables = more memory and more dereferences
+	-- but in C++ this isn't the case
+	{name='NeuralNetLua', ctor = function(...)
+		local nn = require 'NeuralNetLua'(...)
+		-- make compat with old api
+		nn.input = nn.layers[1].x
+		--nn.input = nn:input()	-- TODO .. or I could just nn.input = nn.layers[1].x ... but I've overridden the metatable to not allow new fields to be added (why do I do that? hmm...)
+		return nn
+	end},
 } do
 	print()
 	timer(info.name,function()
-		local nn = info.cl(222, 80, 40, 2)
+		local nn = info.ctor(222, 80, 40, 2)
 		-- TODO how much is filling the input with __index vs ptr access changing things?
 		-- welp filling is 1/100th the time of feedForward and backProp so :shrug:
 		for i=1,#nn.input do
@@ -79,38 +89,3 @@ for _,info in ipairs{
 		end)
 	end)
 end
---]]
-
--- [[ the C++ version has a slightly dif API since it groups the layer stuff into sub-objects.
--- I didn't do this in Lua because more tables = more memory and more dereferences
--- but in C++ this isn't the case
-for _,info in ipairs{
-	{name='NeuralNetLua', cl=require 'NeuralNetLua'},
-} do
-	print()
-	timer(info.name,function()
-		local nn = info.cl(222, 80, 40, 2)
-		--local input = nn:input()	-- TODO .. or I could just nn.input = nn.layers[1].x ... but I've overridden the metatable to not allow new fields to be added (why do I do that? hmm...)
-		nn.input = nn.layers[1].x
-		
-		-- the rest matches the test above
-		for i=1,#nn.input do
-			nn.input[i] = math.random()
-		end
-		timer('feedForward + backPropagate', function()
-			for i=1,numIter do
-				nn:feedForward()
-				nn.desired[1] = math.random()
-				nn.desired[2] = math.random()
-				nn:calcError()
-				nn:backPropagate()
-			end
-		end)
-		timer('feedForward only', function()
-			for i=1,numIter do
-				nn:feedForward()
-			end
-		end)
-	end)
-end
---]]

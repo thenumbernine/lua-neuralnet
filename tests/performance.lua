@@ -2,74 +2,20 @@
 --[[
 performance test between feedForward and backprop, with and without batch, matrix vs matrix.ffi vs maybe I'll write my own wrappers to Blaze or something
 
-Press ENTER or type command to continue
-
-ann...
- feedForward + backPropagate...
- ...done feedForward + backPropagate (2.7898669242859s)
- feedForward only...
- ...done feedForward only (0.52732181549072s)
-...done ann (3.3183100223541s)
-
-ann-ffi[double]...
- feedForward + backPropagate...
- ...done feedForward + backPropagate (1.2917938232422s)
- feedForward only...
- ...done feedForward only (0.38366603851318s)
-...done ann-ffi (1.6803929805756s)
-
-ann-ffi[float]...
- feedForward + backPropagate...
- ...done feedForward + backPropagate (1.5866541862488s)
- feedForward only...
- ...done feedForward only (0.4066641330719s)
-...done ann-ffi (1.9986720085144s)
-
-NeuralNet::ANN<float>...
- feedForward + backPropagate...
- ...done feedForward + backPropagate (0.41166496276855s)
- feedForward only...
- ...done feedForward only (0.21063303947449s)
-...done NeuralNetLua (0.62612009048462s)
-
-NeuralNet::ANN<double>...
- feedForward + backPropagate...
- ...done feedForward + backPropagate (0.48642611503601s)
- feedForward only...
- ...done feedForward only (0.23366689682007s)
-...done NeuralNetLua (0.72286415100098s)
-
-.. from there the more i try to optimize ann-ffi the slower it goes
+.. the more i try to optimize ann-ffi the slower it goes
 so ann-ffi is only beneficial for larger networks
 and any attempt to 'optimize' it makes it go slower
 luajit is weird
+
+the naive c++ impl using row-major i.e. dot-products per-col-elem ran as fast as luajit
+but expanding 4x of the inner loop made gcc implciitly pick up simd and i got a ... 3x ... perf increase
+from there, i exposed all the c++23 float types ... and all my float16's go dog slow.
+float and double are the fastest.  float is about 10% faster.
 --]]
 local timer = require 'ext.timer'.timer
 local numIter = 10000
 
--- hmm ann-ffi isn't much faster as float
--- maybe even 5% slower for some reason
-require 'matrix.ffi'.real = 'float'
-
-for _,info in ipairs{
-	--{name='ann', ctor=require 'neuralnet.ann'},
-	{name='ann-ffi', ctor=require 'neuralnet.ann-ffi'},
-
-	-- [[ the C++ version has a slightly dif API since it groups the layer stuff into sub-objects.
-	-- I didn't do this in Lua because more tables = more memory and more dereferences
-	-- but in C++ this isn't the case
-	{name='NeuralNet::ANN<float>', ctor = function(...)
-		local nn = require 'NeuralNetLua'['NeuralNet::ANN<float>'](...)		-- float goes maybe 15% faster than double
-		nn.input = nn.layers[1].x
-		return nn
-	end},
-	{name='NeuralNet::ANN<double>', ctor = function(...)
-		local nn = require 'NeuralNetLua'['NeuralNet::ANN<double>'](...)
-		nn.input = nn.layers[1].x		-- make compat with old api
-		return nn
-	end},
-	--]]
-} do
+local function test(info)
 	print()
 	timer(info.name,function()
 		local nn = info.ctor(222, 80, 40, 2)
@@ -94,3 +40,37 @@ for _,info in ipairs{
 		end)
 	end)
 end
+
+test{name='ann', ctor=require 'neuralnet.ann'}
+
+-- hmm ann-ffi isn't much faster as float
+-- maybe even 5% slower for some reason
+require 'matrix.ffi'.real = 'float'
+test{name='ann-ffi[float]', ctor=require 'neuralnet.ann-ffi'}
+
+require 'matrix.ffi'.real = 'double'
+test{name='ann-ffi[double]', ctor=require 'neuralnet.ann-ffi'}
+
+-- [[ the C++ version has a slightly dif API since it groups the layer stuff into sub-objects.
+-- I didn't do this in Lua because more tables = more memory and more dereferences
+-- but in C++ this isn't the case
+for _,name in ipairs{
+	'NeuralNet::ANN<float>',
+	'NeuralNet::ANN<double>',
+	'NeuralNet::ANN<long double>',
+	'NeuralNet::ANN<std::float16_t>',
+	'NeuralNet::ANN<std::float32_t>',
+	'NeuralNet::ANN<std::float64_t>',
+	--'NeuralNet::ANN<std::float128_t>',	-- segfault
+	'NeuralNet::ANN<std::bfloat16_t>',
+} do
+	test{
+		name = name,
+		ctor = function(...)
+			local nn = require 'NeuralNetLua'[name](...)		-- float goes maybe 15% faster than double
+			nn.input = nn.layers[1].x		-- make compat with old api
+			return nn
+		end,
+	}
+end
+--]]

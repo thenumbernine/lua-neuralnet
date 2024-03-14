@@ -11,38 +11,35 @@ ann...
  ...done feedForward only (0.52732181549072s)
 ...done ann (3.3183100223541s)
 
--- USING V1 ... least optimization is better ....
-ann-ffi...
+ann-ffi[double]...
  feedForward + backPropagate...
  ...done feedForward + backPropagate (1.2917938232422s)
  feedForward only...
  ...done feedForward only (0.38366603851318s)
 ...done ann-ffi (1.6803929805756s)
 
--- USING V2
-ann-ffi...
+ann-ffi[float]...
  feedForward + backPropagate...
- ...done feedForward + backPropagate (1.5053470134735s)
+ ...done feedForward + backPropagate (1.5866541862488s)
  feedForward only...
- ...done feedForward only (0.59355282783508s)
-...done ann-ffi (2.1031799316406s)
+ ...done feedForward only (0.4066641330719s)
+...done ann-ffi (1.9986720085144s)
 
--- USING V3
-ann-ffi...
+NeuralNet::ANN<float>...
  feedForward + backPropagate...
- ...done feedForward + backPropagate (1.4636361598969s)
+ ...done feedForward + backPropagate (0.41166496276855s)
  feedForward only...
- ...done feedForward only (0.57114696502686s)
-...done ann-ffi (2.0391969680786s)
+ ...done feedForward only (0.21063303947449s)
+...done NeuralNetLua (0.62612009048462s)
 
--- USING V4
-ann-ffi...
+NeuralNet::ANN<double>...
  feedForward + backPropagate...
- ...done feedForward + backPropagate (1.5506801605225s)
+ ...done feedForward + backPropagate (0.48642611503601s)
  feedForward only...
- ...done feedForward only (0.66539001464844s)
-...done ann-ffi (2.2207000255585s)
+ ...done feedForward only (0.23366689682007s)
+...done NeuralNetLua (0.72286415100098s)
 
+.. from there the more i try to optimize ann-ffi the slower it goes
 so ann-ffi is only beneficial for larger networks
 and any attempt to 'optimize' it makes it go slower
 luajit is weird
@@ -50,20 +47,28 @@ luajit is weird
 local timer = require 'ext.timer'.timer
 local numIter = 10000
 
+-- hmm ann-ffi isn't much faster as float
+-- maybe even 5% slower for some reason
+require 'matrix.ffi'.real = 'float'
+
 for _,info in ipairs{
-	{name='ann', ctor=require 'neuralnet.ann'},
+	--{name='ann', ctor=require 'neuralnet.ann'},
 	{name='ann-ffi', ctor=require 'neuralnet.ann-ffi'},
 
-	-- the C++ version has a slightly dif API since it groups the layer stuff into sub-objects.
+	-- [[ the C++ version has a slightly dif API since it groups the layer stuff into sub-objects.
 	-- I didn't do this in Lua because more tables = more memory and more dereferences
 	-- but in C++ this isn't the case
-	{name='NeuralNetLua', ctor = function(...)
-		local nn = require 'NeuralNetLua'(...)
-		-- make compat with old api
+	{name='NeuralNet::ANN<float>', ctor = function(...)
+		local nn = require 'NeuralNetLua'['NeuralNet::ANN<float>'](...)		-- float goes maybe 15% faster than double
 		nn.input = nn.layers[1].x
-		--nn.input = nn:input()	-- TODO .. or I could just nn.input = nn.layers[1].x ... but I've overridden the metatable to not allow new fields to be added (why do I do that? hmm...)
 		return nn
 	end},
+	{name='NeuralNet::ANN<double>', ctor = function(...)
+		local nn = require 'NeuralNetLua'['NeuralNet::ANN<double>'](...)
+		nn.input = nn.layers[1].x		-- make compat with old api
+		return nn
+	end},
+	--]]
 } do
 	print()
 	timer(info.name,function()

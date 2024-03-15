@@ -26,6 +26,11 @@ local function test(info)
 		for i=1,#nn.input do
 			nn.input[i] = math.random()
 		end
+		timer('feedForward only', function()
+			for i=1,numIter do
+				nn:feedForward()
+			end
+		end)
 		timer('feedForward + backPropagate', function()
 			for i=1,numIter do
 				nn:feedForward()
@@ -33,11 +38,6 @@ local function test(info)
 				nn.desired[2] = math.random()
 				nn:calcError()
 				nn:backPropagate()
-			end
-		end)
-		timer('feedForward only', function()
-			for i=1,numIter do
-				nn:feedForward()
 			end
 		end)
 	end)

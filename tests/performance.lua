@@ -13,12 +13,13 @@ from there, i exposed all the c++23 float types ... and all my float16's go dog 
 float and double are the fastest.  float is about 10% faster.
 maybe I will get into the avx functions or something idk
 --]]
-local timer = require 'ext.timer'.timer
+local timer = require 'ext.timer'.timerQuiet
 local numIter = 10000
 
 local function test(info)
-	print()
-	timer(info.name,function()
+	local ffTime
+	local ffbpTime
+	local totalTime = timer(function()
 		--local nn = info.ctor(222, 80, 40, 2)
 		local nn = info.ctor(104, 40, 40, 40, 2)
 		-- TODO how much is filling the input with __index vs ptr access changing things?
@@ -26,12 +27,12 @@ local function test(info)
 		for i=1,#nn.input do
 			nn.input[i] = math.random()
 		end
-		timer('feedForward only', function()
+		ffTime = timer(function()
 			for i=1,numIter do
 				nn:feedForward()
 			end
 		end)
-		timer('feedForward + backPropagate', function()
+		ffbpTime = timer(function()
 			for i=1,numIter do
 				nn:feedForward()
 				nn.desired[1] = math.random()
@@ -41,6 +42,7 @@ local function test(info)
 			end
 		end)
 	end)
+	print(('%q'):format(info.name), ffTime, ffbpTime, totalTime)
 end
 
 test{name='ann', ctor=require 'neuralnet.ann'}

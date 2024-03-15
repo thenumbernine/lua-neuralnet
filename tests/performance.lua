@@ -62,11 +62,11 @@ for _,name in ipairs{
 	'NeuralNet::ANN<float>',
 	'NeuralNet::ANN<double>',
 	'NeuralNet::ANN<long double>',
-	'NeuralNet::ANN<std::float16_t>',
 	'NeuralNet::ANN<std::float32_t>',
 	'NeuralNet::ANN<std::float64_t>',
-	--'NeuralNet::ANN<std::float128_t>',	-- segfault
+	'NeuralNet::ANN<std::float16_t>',
 	'NeuralNet::ANN<std::bfloat16_t>',
+	--'NeuralNet::ANN<std::float128_t>',	-- segfault
 } do
 	test{
 		name = name,

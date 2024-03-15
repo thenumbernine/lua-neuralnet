@@ -83,7 +83,7 @@ return {
 		poorQuadraticTanhDeriv = poorQuadraticTanhDeriv,
 		poorCubicTanh = poorCubicTanh,
 		poorCubicTanhDeriv = poorCubicTanhDeriv,
-		ReLU,
-		ReLUDeriv,
+		ReLU = ReLU,
+		ReLUDeriv = ReLUDeriv,
 	},
 }

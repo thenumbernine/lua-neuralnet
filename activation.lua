@@ -68,7 +68,7 @@ array contains:
 --]]
 return {
 	tanh = {math.tanh, tanhDeriv, -.9, .9, 'math.tanh(x)', '1 - y * y'},
-	poorLinearTanh = {poorLinearTanh, poorLinearTanhDeriv, -.9, .9},
+	poorLinearTanh = {poorLinearTanh, poorLinearTanhDeriv, -.9, .9},			-- i.g. this is called "HardTanh" ... because ?
 	poorQuadraticTanh = {poorQuadraticTanh, poorQuadraticTanhDeriv, -.9, .9},
 	poorCubicTanh = {poorCubicTanh, poorCubicTanhDeriv, -.9, .9},
 	ReLU = {ReLU, ReLUDeriv, 0, 1},

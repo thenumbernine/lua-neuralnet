@@ -11,6 +11,7 @@ the naive c++ impl using row-major i.e. dot-products per-col-elem ran as fast as
 but expanding 4x of the inner loop made gcc implciitly pick up simd and i got a ... 3x ... perf increase
 from there, i exposed all the c++23 float types ... and all my float16's go dog slow.
 float and double are the fastest.  float is about 10% faster.
+maybe I will get into the avx functions or something idk
 --]]
 local timer = require 'ext.timer'.timer
 local numIter = 10000

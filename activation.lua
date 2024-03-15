@@ -15,7 +15,7 @@ local function poorLinearTanhDeriv(x)
 end
 
 local function poorQuadraticTanh(x)
-	return x < -2 and -1 
+	return x < -2 and -1
 	or x < 0 and x * (1 + .25*x)
 	or x < 2 and x * (1 - .25*x)
 	or 1
@@ -52,6 +52,13 @@ end
 -- TODO minimize integral(tanh(x) - cubic(x), x=x1 to x2) ...
 --]]
 
+local function ReLU(x)
+	return x < 0 and 0 or x
+end
+local function ReLUDeriv(x,y)
+	return x < 0 and 0 or 1
+end
+
 --[[
 array contains:
 1 = f(x)
@@ -64,6 +71,7 @@ return {
 	poorLinearTanh = {poorLinearTanh, poorLinearTanhDeriv, -.9, .9},
 	poorQuadraticTanh = {poorQuadraticTanh, poorQuadraticTanhDeriv, -.9, .9},
 	poorCubicTanh = {poorCubicTanh, poorCubicTanhDeriv, -.9, .9},
+	ReLU = {ReLU, ReLUDeriv, 0, 1},
 
 	-- in case you want to access the funcs by name
 	funcs = {
@@ -75,5 +83,7 @@ return {
 		poorQuadraticTanhDeriv = poorQuadraticTanhDeriv,
 		poorCubicTanh = poorCubicTanh,
 		poorCubicTanhDeriv = poorCubicTanhDeriv,
+		ReLU,
+		ReLUDeriv,
 	},
 }

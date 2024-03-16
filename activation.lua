@@ -1,5 +1,8 @@
 -- contains lists of f(x), deriv(x,y), hi, lo
 
+local function zero(x) return 0 end
+local function identity(x) return x end
+
 local function tanhDeriv(x,y) return 1 - y * y end
 
 local function poorLinearTanh(x)
@@ -75,6 +78,8 @@ return {
 
 	-- in case you want to access the funcs by name
 	funcs = {
+		identity = identity,
+		zero = zero,
 		tanh = math.tanh,
 		tanhDeriv = tanhDeriv,
 		poorLinearTanh = poorLinearTanh,

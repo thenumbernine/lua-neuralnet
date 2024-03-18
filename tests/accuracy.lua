@@ -9,6 +9,7 @@ local NNLib = require 'NeuralNetLua'
 local function makeCpp(name)
 	return {
 		name = name,
+		-- TODO put this somewhere I can get to it , cuz i do this a lot
 		ctor = function(...)
 			local nn = NNLib[name](...)
 			nn.input = nn.layers[1].x

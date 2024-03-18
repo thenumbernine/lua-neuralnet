@@ -74,17 +74,14 @@ ANN.perLayerActivationDerivs= {}
 -- false by default,
 -- set to 'true' to separate the weight-delta calculation/accumulation from the weight-delta updating the weight
 ANN.useBatch = false
-ANN.batchCounter = 0
-ANN.totalBatchCounter = 0	-- keep track of which overall weight-accumulation we are on
+ANN.batchCounter = 0	-- keep track of which overall weight-accumulation we are on
 
 function ANN:init(...)
 	local layerSizes = {...}
 	self.x = {}
 	self.xErr = {}
 	self.w = {}
-	if self.useBatch then
-		self.dw = {}
-	end
+	self.dw = {}
 	self.useBias = {}
 	self.net = {}
 	self.netErr = {}
@@ -96,9 +93,7 @@ function ANN:init(...)
 			self.useBias[i] = true
 			self.net[i] = self:newMatrix(layerSizes[i+1])
 			self.netErr[i] = self:newMatrix(layerSizes[i+1])
-			if self.useBatch then
-				self.dw[i] = self:newMatrix(layerSizes[i+1], layerSizes[i]+1)
-			end
+			self.dw[i] = self:newMatrix(layerSizes[i+1], layerSizes[i]+1)
 		end
 	end
 	self.input = self.x[1]
@@ -279,7 +274,6 @@ function ANN:backPropagate(dt)
 		end
 	end
 	if self.useBatch then
-		self.totalBatchCounter = self.totalBatchCounter + 1
 		self.batchCounter = self.batchCounter + 1
 		if self.batchCounter >= self.useBatch then
 			self:updateBatch()

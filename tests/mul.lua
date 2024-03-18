@@ -75,12 +75,15 @@ for iter=1,1000000 do
 	-- we're solving x for A x = b
 	-- x = weights at next state
 	-- A = backprop
-	-- b = ...
-	-- lets just try a pred-corr solver first, they do better for nonlinear stuff anyways
+	-- b = weigths at prev step
 	require 'solver.conjres'{
 		A = function()
 		end,
 	}()
+	-- lets just try a pred-corr solver first, they do better for nonlinear stuff anyways
+	-- wait, is pred-corr just the same as performing grdient descent for a fixed input/desired until it fully converges?
+	-- yeahhhh... pred-corr is just converging to the infinite limit of a single state configuration ... maybe it' be more successful with batch? 
+	-- but I think pred-corr isn't good for backprop
 	--]]
 end
 

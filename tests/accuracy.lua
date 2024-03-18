@@ -1,9 +1,50 @@
 #!/usr/bin/env luajit
+--[[
+this is feeding in a determined set of numbers and used for verifying that the output is all matching for each of my networks
+--]]
 local ANN = require 'neuralnet.ann'
 local ANNFFI = require 'neuralnet.ann-ffi'
+local NNLib = require 'NeuralNetLua'
+
+local function makeCpp(name)
+	return {
+		name = name,
+		ctor = function(...)
+			local nn = NNLib[name](...)
+			nn.input = nn.layers[1].x
+			-- until I do this for the lua versions ... here's a compat layer:
+			nn.x = {}
+			nn.xErr = {}
+			nn.net = {}
+			nn.netErr = {}
+			nn.w = {}
+			nn.dw = {}		
+			for i,layer in ipairs(nn.layers) do
+				nn.x[i] = assert(layer.x)
+				nn.xErr[i] = assert(layer.xErr)
+				nn.net[i] = assert(layer.net)
+				nn.netErr[i] = layer.netErr
+				nn.w[i] = assert(layer.w)
+				nn.dw[i] = assert(layer.dw)
+			end
+			nn.x[#nn.layers+1] = nn.output
+			nn.xErr[#nn.layers+1] = nn.outputError
+			return nn
+		end,
+	}
+end
+
 for _,info in ipairs{
-	{name='ann', cl=ANN},
-	{name='ann-ffi', cl=ANNFFI},
+	{name='neuralnet.ann', ctor=ANN},
+	{name='neuralnet.ann-ffi', ctor=ANNFFI},
+	makeCpp'NeuralNet::ANN<float>',
+	makeCpp'NeuralNet::ANN<double>',
+	makeCpp'NeuralNet::ANN<std::float32_t>',
+	makeCpp'NeuralNet::ANN<std::float64_t>',
+	--makeCpp'NeuralNet::ANN<long double>',	-- segfaults ...
+	makeCpp'NeuralNet::ANN<std::float16_t>',
+	makeCpp'NeuralNet::ANN<std::bfloat16_t>',
+	makeCpp'NeuralNet::ANN<std::float128_t>',
 } do
 	local i = 0
 	local function src()
@@ -12,12 +53,15 @@ for _,info in ipairs{
 		--return math.random() * 2 - 1
 	end
 
-	--local nn = info.cl(222, 80, 40, 2)
-	local nn = info.cl(5,4,3,2)
+	--local nn = info.ctor(222, 80, 40, 2)
+	local nn = info.ctor(5,4,3,2)
 	nn.activation = function(x) return x end
 	nn.activationDeriv = function(x) return 1 end
 	for k,w in ipairs(nn.w) do
-		local height, width = w:size():unpack()
+		--local height, width = w:size():unpack()
+		-- for cpp compat 
+		local height = #w
+		local width = #w[1]
 		for i=1,height do
 			for j=1,width do
 				w[i][j] = src()
@@ -33,6 +77,7 @@ for _,info in ipairs{
 	nn:feedForward()
 	
 	print()
+	print(info.name)
 	--print('input', nn.input)
 	print('input L1 norm', nn.input:normL1())
 	--print('w[1] ', nn.w[1])

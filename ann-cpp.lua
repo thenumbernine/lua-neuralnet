@@ -117,10 +117,21 @@ return function(ctype, nospeedhacks)
 				--]=]
 				-- [=[ will this help perf?
 				local ffi = require 'ffi'
-				local function tocptr(T, uptr)
-					return ffi.cast(T, assert(tonumber(tostring(uptr):match'^userdata: (.*)$')))
-				end
 				local RealPtr = Real..'*'
+				require 'ffi.req' 'c.stdlib'	-- strtoul
+				local function tocptr(T, uptr)
+--DEBUG: print('T', T, 'uptr', uptr)
+					local uptrstr = tostring(uptr)
+--DEBUG: print('uptrstr', uptrstr)
+					local addrstr = uptrstr:match'^userdata: (.*)$'
+--DEBUG: print('addrstr', addrstr)
+					--local addr = assert(tonumber(addrstr))
+					local addr = ffi.C.strtoul(addrstr, ffi.cast('char**', 0), 0)
+--DEBUG: print('addr', ('0x%x'):format(addr))
+					local ptr = ffi.cast(T, addr)
+--DEBUG: print('ptr', ptr)
+					return ptr
+				end
 				--local inputptr = tocptr(RealPtr, cppnn.layers[1].x.v:data())
 				--nn.input = inputptr-1	-- make it 1-based
 				-- - need to cast to an array type
@@ -135,7 +146,8 @@ return function(ctype, nospeedhacks)
 				--]==]
 				-- hmmmm should I allow overwriting fields in the C wrapper table ..
 				-- at this point why not make a whole new Lua wrapper table ...
-				nn.input = tocptr(RealPtr, cppnn.layers[1].x.v:data()) - 1
+				local inputptr = cppnn.layers[1].x.v:data()
+				nn.input = tocptr(RealPtr, inputptr) - 1
 				nn.inputError = tocptr(RealPtr, cppnn.layers[1].xErr.v:data()) - 1
 				nn.output = tocptr(RealPtr, cppnn.output.v:data()) - 1
 				nn.outputError = tocptr(RealPtr, cppnn.outputError.v:data()) - 1

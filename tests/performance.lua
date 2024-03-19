@@ -26,7 +26,8 @@ local function test(info)
 		
 		-- TODO how much is filling the input with __index vs ptr access changing things?
 		-- welp filling is 1/100th the time of feedForward and backProp so :shrug:
-		for i=1,#nn.input do
+		--for i=1,#nn.input do	-- ann-cpp...
+		for i=1,#nn.w[1][1]-1 do
 			nn.input[i] = math.random()
 		end
 		ffTime = timer(function()
@@ -63,19 +64,19 @@ test{name='ann-ffi[double]', ctor=require 'neuralnet.ann-ffi'}
 for _,name in ipairs{
 	'NeuralNet::ANN<float>',
 	'NeuralNet::ANN<double>',
+	--[[ these now only work with nospeedhacks set
 	'NeuralNet::ANN<std::float32_t>',
 	'NeuralNet::ANN<std::float64_t>',
 	'NeuralNet::ANN<std::float16_t>',
 	'NeuralNet::ANN<std::bfloat16_t>',
+	--]]
 	--'NeuralNet::ANN<long double>',	-- segfaults ...
 	--'NeuralNet::ANN<std::float128_t>',
 } do
 	test{
 		name = name,
 		ctor = function(...)
-			local nn = require 'NeuralNetLua'[name](...)		-- float goes maybe 15% faster than double
-			nn.input = nn.layers[1].x		-- make compat with old api
-			return nn
+			return require 'neuralnet.ann-cpp'(name)(...)
 		end,
 	}
 end

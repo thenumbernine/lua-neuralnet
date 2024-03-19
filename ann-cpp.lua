@@ -8,10 +8,13 @@ or maybe I should switch the C++ vectors to be 0-based vectors and then always n
 --]]
 local assertindex = require 'ext.assert'.index
 return function(ctype)
+	-- right now ctype is the neural net class name, i.e. NeuralNet::ANN<T>
 	local ANNctor = assertindex(require 'NeuralNetLua', ctype)
+	local Real = assert((ctype:match'^NeuralNet::ANN<(.*)>$'))
 	local ANN = setmetatable({}, {
 		__call = function(ANN, ...)
-			local nn = ANNctor(...)
+			local cppnn = ANNctor(...)
+			local nn = {}
 			-- instead of redesigning the Lua ANN API, or the code below, I can just make a compat layer within the network table here...
 			nn.x = {}
 			nn.xErr = {}
@@ -21,13 +24,22 @@ return function(ctype)
 			nn.dw = {}
 			nn.useBias = setmetatable({}, {
 				__index = function(t,k)
-					return nn.layers[k].getBias()
+					return cppnn.layers[k].getBias()
 				end,
 				__newindex = function(t,k,v)
-					nn.layers[k]:setBias(v)
+					cppnn.layers[k]:setBias(v)
 				end,
 			})
-			for i,layer in ipairs(nn.layers) do
+			function nn:feedForward(...)
+				return cppnn:feedForward(...)
+			end
+			function nn:calcError(...)
+				return cppnn:calcError(...)
+			end
+			function nn:backPropagate(...)
+				return cppnn:backPropagate(...)
+			end
+			for i,layer in ipairs(cppnn.layers) do
 				nn.x[i] = assert(layer.x)
 				nn.xErr[i] = assert(layer.xErr)
 				nn.net[i] = assert(layer.net)
@@ -35,26 +47,51 @@ return function(ctype)
 				nn.w[i] = assert(layer.w)
 				nn.dw[i] = assert(layer.dw)
 			end
-			nn.x[#nn.layers+1] = nn.output
-			nn.xErr[#nn.layers+1] = nn.outputError
+			nn.x[#cppnn.layers+1] = cppnn.output
+			nn.xErr[#cppnn.layers+1] = cppnn.outputError
 			-- the downside is the nn structure is still read-only ...
-		
-			-- [=[ 
+	
+			-- THIS IS THE SLOWDOWN
+			-- using the original input as vector-of-Reals, a 1 year summary of nn/prev00000.txt takes 45 seconds
+			-- (with pure lua or luajit-ffi it takes 10 seconds)
+			-- however
+			-- replace nn.input with a cdata ptr and it takes just 6 seconds
+			
+			--[=[ 
 			nn.input = nn.layers[1].x
 			--]=]
-			--[=[ will this help perf? 
+			-- [=[ will this help perf? 
 			local ffi = require 'ffi'
-			local inputptr = assert(tonumber(tostring(nn.layers[1].x.v:data().ptr):match'^userdata: (.*)$'))
-			-- TODO 
+			local function tocptr(T, uptr)
+				return ffi.cast(T, assert(tonumber(tostring(uptr):match'^userdata: (.*)$')))
+			end
+			local RealPtr = Real..'*'
+			--local inputptr = tocptr(RealPtr, cppnn.layers[1].x.v:data())
+			--nn.input = inputptr-1	-- make it 1-based
 			-- - need to cast to an array type
 			-- - need to give the array type a metatable ... with a length oeprator (to trick nn.input , and so nn.input still has native access)
-			nn.input = ffi.cast('double*', inputptr )-1
+			--[==[ I guess luajit won't let me defined metatables for ctypes that are arrays ... structs only ... and structs don't have overloaded [] operator ... 
+			local inputlen = #nn.x[1]
+			local ffitype = ffi.typeof(Real..'(*)['..inputlen..']')
+			-- ... so I can't define the length operator for the nn.input Real* cdata ..
+			ffi.metatype(ffitype, {
+				__len = function() return inputlen end,
+			})
+			--]==]
+			-- hmmmm should I allow overwriting fields in the C wrapper table ..
+			-- at this point why not make a whole new Lua wrapper table ...
+			nn.input = tocptr(RealPtr, cppnn.layers[1].x.v:data()) - 1
+			nn.inputError = tocptr(RealPtr, cppnn.layers[1].xErr.v:data()) - 1
+			nn.output = tocptr(RealPtr, cppnn.output.v:data()) - 1
+			nn.outputError = tocptr(RealPtr, cppnn.outputError.v:data()) - 1
+			nn.desired = tocptr(RealPtr, cppnn.desired.v:data()) - 1
 			--]=]
 
 			-- TODO I can't modify ANN.useBatch and have it reflect on all objs ... until I expose static members in the MT
 			-- ... but even if I did that, I'd have to separate the static-class-default from the per-network weight ... 
 			-- ... and there would be no changing of all objs set to the class value (i..e obj field is nil) post-ctor o the obj
 			nn.useBatch = ANN.useBatch
+			cppnn.useBatch = ANN.useBatch
 			for _,w in ipairs(nn.w) do
 				function w:toLuaMatrix()
 					return require 'matrix'.lambda({w:height(), w:width()}, function(i,j) return w[i][j] end)
@@ -70,18 +107,18 @@ return function(ctype)
 			-- or I should just replace .activation with :setActivation that sets all layers' activations ...
 			function nn:setActivation(name, index)
 				if index then
-					nn.layers[index]:setActivation(name)
+					cppnn.layers[index]:setActivation(name)
 				else
-					for _,layer in ipairs(nn.layers) do
+					for _,layer in ipairs(cppnn.layers) do
 						layer:setActivation(name)
 					end
 				end
 			end
 			function nn:setActivationDeriv(name, index)
 				if index then
-					nn.layers[index]:setActivationDeriv(name)
+					cppnn.layers[index]:setActivationDeriv(name)
 				else
-					for _,layer in ipairs(nn.layers) do
+					for _,layer in ipairs(cppnn.layers) do
 						layer:setActivationDeriv(name)
 					end
 				end

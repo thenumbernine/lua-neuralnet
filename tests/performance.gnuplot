@@ -1,9 +1,9 @@
 #!/usr/bin/env gnuplot
-set terminal svg size 1024,768
+set terminal svg size 1024,2048
 set output "performance.svg"
 set boxwidth .9
 set style fill solid
-set xtics rotate by -80
+set xtics rotate by -90
 
 # pro: get to see smaller times easier
 # con: stacked bar plots no longer represent visually the proportions of their time

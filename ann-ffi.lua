@@ -7,11 +7,15 @@ local matrix = require 'matrix.ffi'
 local class = require 'ext.class'
 local asserteq = require 'ext.assert'.eq
 local assertne = require 'ext.assert'.ne
+local assertindex = require 'ext.assert'.index
+local activations = require 'neuralnet.activation'
 
 --[[
 self.x[1..n]
 self.w[1..n-1]
 self.useBias[1..n-1]
+self.activations[1..n-1]
+self.activationDerivs[1..n-1]
 self.input
 self.output
 self.xErr[1..n]
@@ -65,12 +69,6 @@ local function multiplyWithBias(m, vin, vout, useBias)
 	end
 end
 
-ANN.activation, ANN.activationDeriv = table.unpack(require 'neuralnet.activation'.tanh)
-
--- specify activation per-layer, if not found then the default is used
-ANN.perLayerActivations = {}
-ANN.perLayerActivationDerivs= {}
-
 -- false by default,
 -- set to 'true' to separate the weight-delta calculation/accumulation from the weight-delta updating the weight
 ANN.useBatch = false
@@ -78,6 +76,7 @@ ANN.batchCounter = 0	-- keep track of which overall weight-accumulation we are o
 
 function ANN:init(...)
 	local layerSizes = {...}
+	-- TODO make a layers[] table already
 	self.x = {}
 	self.xErr = {}
 	self.w = {}
@@ -100,6 +99,33 @@ function ANN:init(...)
 	self.output = self.x[#self.x]
 	self.outputError = self.xErr[#self.xErr]
 	self.desired = self:newMatrix(#self.output)
+
+	self.activations = {}
+	self.activationDerivs = {}
+	self:setActivation'tanh'
+	self:setActivationDeriv'tanhDeriv'
+end
+
+function ANN:setActivation(func, index)
+	if type(func) == 'string' then func = assertindex(activations.funcs, func) end
+	if index then
+		self.activations[index] = func
+	else
+		for i=1,#self.w do
+			self.activations[i] = func
+		end
+	end
+end
+
+function ANN:setActivationDeriv(func, index)
+	if type(func) == 'string' then func = assertindex(activations.funcs, func) end
+	if index then
+		self.activationDerivs[index] = func
+	else
+		for i=1,#self.w do
+			self.activationDerivs[i] = func
+		end
+	end
 end
 
 function ANN:feedForward()
@@ -117,7 +143,7 @@ function ANN:feedForward()
 		local h, w = self.w[k].size_:unpack()
 --DEBUG: asserteq(w, #xk + 1)
 --DEBUG: asserteq(h, #netk)
-		local activation = self.perLayerActivations[k] or self.activation
+		local activation = self.activations[k]
 		for i=0,h-1 do
 			local s = 0
 			for j=0,w-2 do
@@ -137,7 +163,7 @@ function ANN:feedForward()
 		--[[ inline more ... the more I inline / make native the operations, the slower luajit goes ...
 		local m = self.w[k]
 		local useBias = self.useBias[k]
-		local activation = self.perLayerActivations[k] or self.activation
+		local activation = self.activations[k]
 		local mijptr = m.ptr
 --DEBUG: asserteq(m.size_[2], #self.x[k] + 1)
 --DEBUG: asserteq(m.size_[1], #self.net[k])
@@ -223,7 +249,7 @@ function ANN:backPropagate(dt)
 			dweight = self.dw[i]
 			dwptr = dweight.ptr
 		end
-		local activationDeriv = self.perLayerActivationDerivs[i] or self.activationDeriv
+		local activationDeriv = self.activationDerivs[i]
 		local nextxptr = self.x[i+1].ptr
 		local xptr = self.x[i].ptr
 		local netptr = self.net[i].ptr

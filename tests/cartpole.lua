@@ -38,8 +38,8 @@ local DiscreteStateDescription = class(StateDescription)
 
 function DiscreteStateDescription:createNeuralNetwork(...)
 	local rlnn = DiscreteStateDescription.super.createNeuralNetwork(self, ...)
-	rlnn.activation = function(x) return x end
-	rlnn.activationDeriv = function() return 1 end
+	rlnn.nn:setActivation'identity'
+	rlnn.nn:setActivationDeriv'one'
 	for k=1,#rlnn.nn.w do
 		-- disable neural net bias
 		rlnn.nn.useBias[k] = false
@@ -128,16 +128,17 @@ function ContinuousStateDescription:createNeuralNetwork(...)
 	-- set signal to sigmoid
 	--rlnn.activation = function(x) return 1 / (1 + math.exp(-x)) end
 	--rlnn.activationDeriv = function(x,y) return y * (1 - y) end
+	-- "leaky" "hard" sigmoid ... linear approx of sigmoid w/extra slopes
 	local oobslope = .3
-	rlnn.activation = function(x)
+	rlnn.nn:setActivation(function(x)
 		if x < 0 then return oobslope * x end
 		if x > 1 then return oobslope * x + (1 - oobslope) end
 		return x
-	end
-	rlnn.activationDeriv = function(x,y)
+	end)
+	rlnn.nn:setActivationDeriv(function(x,y)
 		if x < 0 or x > 1 then return oobslope end
 		return 1
-	end
+	end)
 	
 	-- set input to be signals of state + last output (last action)
 	rlnn.feedForwardForState = function(self, state)

@@ -1,12 +1,16 @@
 local matrix = require 'matrix'
 --local matrix = require 'matrix.ffi' -- still segfaults, still not a perfect replacement
 local class = require 'ext.class'
+local assertindex = require 'ext.assert'.index
+local activations = require 'neuralnet.activation'
 
 --[[
 self.x[1..n]
 self.net[1..n-1]
 self.w[1..n-1]
 self.useBias[1..n-1]
+self.activations[1..n-1]
+self.activationDerivs[1..n-1]
 self.input
 self.output
 self.xErr[1..n]
@@ -48,12 +52,6 @@ local function multiplyWithBias(m, vin, vout, useBias)
 	end
 end
 
-ANN.activation, ANN.activationDeriv = table.unpack(require 'neuralnet.activation'.tanh)
-
--- specify activation per-layer, if not found then the default is used
-ANN.perLayerActivations = {}
-ANN.perLayerActivationDerivs= {}
-
 -- false by default,
 -- set to 'true' to separate the weight-delta calculation/accumulation from the weight-delta updating the weight
 ANN.useBatch = false
@@ -83,7 +81,35 @@ function ANN:init(...)
 	self.output = self.x[#self.x]
 	self.outputError = self.xErr[#self.xErr]
 	self.desired = self:newMatrix(#self.output)
+
+	self.activations = {}
+	self.activationDerivs = {}
+	self:setActivation'tanh'
+	self:setActivationDeriv'tanhDeriv'
 end
+
+function ANN:setActivation(func, index)
+	if type(func) == 'string' then func = assertindex(activations.funcs, func) end
+	if index then
+		self.activations[index] = func
+	else
+		for i=1,#self.w do
+			self.activations[i] = func
+		end
+	end
+end
+
+function ANN:setActivationDeriv(func, index)
+	if type(func) == 'string' then func = assertindex(activations.funcs, func) end
+	if index then
+		self.activationDerivs[index] = func
+	else
+		for i=1,#self.w do
+			self.activationDerivs[i] = func
+		end
+	end
+end
+
 
 function ANN:feedForward()
 	for k=1,#self.w do
@@ -111,7 +137,7 @@ function ANN:feedForward()
 		end
 		--]]
 
-		local activation = self.perLayerActivations[k] or self.activation
+		local activation = self.activations[k]
 		for i=1,#self.net[k] do
 			self.x[k+1][i] = activation(self.net[k][i])
 		end
@@ -162,7 +188,7 @@ ANN.dt = 1
 function ANN:backPropagate(dt)
 	dt = dt or self.dt
 	for i=#self.x-1,1,-1 do
-		local activationDeriv = self.perLayerActivationDerivs[i] or self.activationDeriv
+		local activationDeriv = self.activationDerivs[i]
 		assert(#self.netErr[i] == #self.x[i+1])
 		for j=1,#self.x[i+1] do
 			self.netErr[i][j] = self.xErr[i+1][j] * activationDeriv(self.net[i][j], self.x[i+1][j])

@@ -51,8 +51,7 @@ local nn = ANN(2*n, 2*n, n)
 nn.useBatch = bit.lshift(1,n)
 nn.dt = .1 / nn.useBatch
 
--- TODO how about getting this from the net? i.e. nn.activation:unpack() or something?
-local _, _, hi, lo = table.unpack(require 'neuralnet.activation'.tanh)
+local hi, lo = -.9, .9
 
 local results = table()
 

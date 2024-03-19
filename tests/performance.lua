@@ -64,7 +64,7 @@ test{name='ann-ffi[double]', ctor=require 'neuralnet.ann-ffi'}
 for _,name in ipairs{
 	'NeuralNet::ANN<float>',
 	'NeuralNet::ANN<double>',
-	--[[ these now only work with nospeedhacks set
+	-- [[ these now only work with nospeedhacks set
 	'NeuralNet::ANN<std::float32_t>',
 	'NeuralNet::ANN<std::float64_t>',
 	'NeuralNet::ANN<std::float16_t>',
@@ -76,7 +76,7 @@ for _,name in ipairs{
 	test{
 		name = name,
 		ctor = function(...)
-			return require 'neuralnet.ann-cpp'(name)(...)
+			return require 'neuralnet.ann-cpp'(name, 'nospeedhacks')(...)
 		end,
 	}
 end

@@ -22,7 +22,7 @@ local function test(info)
 	local totalTime = timer(function()
 		--local nn = info.ctor(222, 80, 40, 2)
 		local nn = info.ctor(104, 40, 40, 40, 2)
-		nn.useBatch = 25
+		--nn.useBatch = 25
 		
 		-- TODO how much is filling the input with __index vs ptr access changing things?
 		-- welp filling is 1/100th the time of feedForward and backProp so :shrug:

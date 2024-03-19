@@ -1,6 +1,6 @@
 -- contains lists of f(x), deriv(x,y), hi, lo
 
-local function zero(x) return 0 end
+local function one(x) return 1 end
 local function identity(x) return x end
 
 local function tanhDeriv(x,y) return 1 - y * y end
@@ -12,9 +12,7 @@ local function poorLinearTanh(x)
 end
 
 local function poorLinearTanhDeriv(x)
-	return x < -1 and 0
-	or x < 1 and 1
-	or 0
+	return x >= -1 and x <= 1 and 1 or 0
 end
 
 local function poorQuadraticTanh(x)
@@ -79,7 +77,7 @@ return {
 	-- in case you want to access the funcs by name
 	funcs = {
 		identity = identity,
-		zero = zero,
+		one = one,
 		tanh = math.tanh,
 		tanhDeriv = tanhDeriv,
 		poorLinearTanh = poorLinearTanh,

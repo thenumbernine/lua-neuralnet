@@ -23,12 +23,14 @@ return function(ctype)
 			setmetatable(nn, {
 				__index = function(t,k)
 					if k == 'dt' then return cppnn.dt end
+					if k == 'dilution' then return cppnn.dilution end	-- TODO
 					if k == 'useBatch' then return cppnn.useBatch > 0 and cppnn.useBatch or false end
 					if k == 'batchCounter' then return cppnn.batchCounter end
 					return rawget(nn, k)
 				end,
 				__newindex = function(t,k,v)
 					if k == 'dt' then cppnn.dt = v end
+					if k == 'dilution' then cppnn.dilution = v end	-- TODO
 					if k == 'useBatch' then cppnn.useBatch = v or 0 end
 					if k == 'batchCounter' then cppnn.batchCounter = v end
 					return rawset(nn, k, v)

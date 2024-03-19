@@ -74,6 +74,9 @@ end
 ANN.useBatch = false
 ANN.batchCounter = 0	-- keep track of which overall weight-accumulation we are on
 
+-- how many % weights to keep per update
+ANN.dilution = 1
+
 function ANN:init(...)
 	local layerSizes = {...}
 	-- TODO make a layers[] table already
@@ -158,7 +161,7 @@ function ANN:feedForward()
 		local xptr = self.x[k+1].ptr
 		for i=0,#self.net[k]-1 do
 			xptr[i] = activation(netptr[i])
-		end	
+		end
 		--]]
 		--[[ inline more ... the more I inline / make native the operations, the slower luajit goes ...
 		local m = self.w[k]
@@ -275,18 +278,37 @@ function ANN:backPropagate(dt)
 		-- adjust new weights
 		if not self.useBatch then
 			-- ... directly/immediately
-			for k=0,w-2 do
-				for j=0,h-1 do
-					wptr[j * w + k] = wptr[j * w + k] + dt * netErrptr[j] * xptr[k]
+			if self.dilution == 1 then
+				for k=0,w-2 do
+					for j=0,h-1 do
+						wptr[j * w + k] = wptr[j * w + k] + dt * netErrptr[j] * xptr[k]
+					end
 				end
-			end
-			if self.useBias[i] then
-				for j=0,h-1 do
-					wptr[j * w + (w-1)] = wptr[j * w + (w-1)] + dt * netErrptr[j]
+				if self.useBias[i] then
+					for j=0,h-1 do
+						wptr[j * w + (w-1)] = wptr[j * w + (w-1)] + dt * netErrptr[j]
+					end
+				end
+			else
+				for k=0,w-2 do
+					for j=0,h-1 do
+						if math.random() < self.dilution then
+							wptr[j * w + k] = wptr[j * w + k] + dt * netErrptr[j] * xptr[k]
+						end
+					end
+				end
+				if self.useBias[i] then
+					for j=0,h-1 do
+						if math.random() < self.dilution then
+							wptr[j * w + (w-1)] = wptr[j * w + (w-1)] + dt * netErrptr[j]
+						end
+					end
 				end
 			end
 		else
 			-- ... accumulate into dw
+			-- should you apply dilution before or after batch weight accum?
+			-- I vote after, because doing so before just screws up our gradient direction, and the whole point of batch is to better determine the gradient direction
 			for k=0,w-2 do
 				for j=0,h-1 do
 					dwptr[j * w + k] = dwptr[j * w + k] + dt * netErrptr[j] * xptr[k]
@@ -317,8 +339,16 @@ function ANN:updateBatch()
 		local dweight = self.dw[i]
 		local dwptr = dweight.ptr
 		local h, w = table.unpack(weight.size_)
-		for jk=0,w*h-1 do
-			wptr[jk] = wptr[jk] + dwptr[jk]
+		if self.dilution == 1 then
+			for jk=0,w*h-1 do
+				wptr[jk] = wptr[jk] + dwptr[jk]
+			end
+		else
+			for jk=0,w*h-1 do
+				if math.random() < self.dilution then
+					wptr[jk] = wptr[jk] + dwptr[jk]
+				end
+			end
 		end
 	end
 	self:clearBatch()

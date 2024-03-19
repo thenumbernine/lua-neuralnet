@@ -57,6 +57,9 @@ end
 ANN.useBatch = false
 ANN.batchCounter = 0	-- keep track of which weight-accumulation we are on
 
+-- how many % weights to keep per update
+ANN.dilution = 1
+
 function ANN:init(...)
 	local layerSizes = {...}
 	self.x = {}
@@ -205,17 +208,35 @@ function ANN:backPropagate(dt)
 		-- adjust new weights
 		if not self.useBatch then
 			-- ... directly/immediately
-			for j=1,#self.w[i] do
-				local l = #self.x[i]
-				for k=1,l do
-					self.w[i][j][k] = self.w[i][j][k] + dt * self.netErr[i][j] * self.x[i][k]
+			if self.dilution == 1 then
+				for j=1,#self.w[i] do
+					local l = #self.x[i]
+					for k=1,l do
+						self.w[i][j][k] = self.w[i][j][k] + dt * self.netErr[i][j] * self.x[i][k]
+					end
+					if self.useBias[i] then
+						self.w[i][j][l+1] = self.w[i][j][l+1] + dt * self.netErr[i][j]
+					end
 				end
-				if self.useBias[i] then
-					self.w[i][j][l+1] = self.w[i][j][l+1] + dt * self.netErr[i][j]
+			else
+				for j=1,#self.w[i] do
+					local l = #self.x[i]
+					for k=1,l do
+						if math.random() < self.dilution then
+							self.w[i][j][k] = self.w[i][j][k] + dt * self.netErr[i][j] * self.x[i][k]
+						end
+					end
+					if self.useBias[i] then
+						if math.random() < self.dilution then
+							self.w[i][j][l+1] = self.w[i][j][l+1] + dt * self.netErr[i][j]
+						end
+					end
 				end
 			end
 		else
 			-- ... accumulate into dw
+			-- should you apply dilution before or after batch weight accum?
+			-- I vote after, because doing so before just screws up our gradient direction, and the whole point of batch is to better determine the gradient direction
 			for j=1,#self.dw[i] do
 				local l = #self.x[i]
 				for k=1,l do
@@ -239,14 +260,32 @@ end
 -- update weights by batch ... and then clear the batch
 function ANN:updateBatch()
 	if not self.useBatch then return end
-	for i=#self.x-1,1,-1 do
-		for j=1,#self.w[i] do
-			local l = #self.x[i]
-			for k=1,l do
-				self.w[i][j][k] = self.w[i][j][k] + self.dw[i][j][k]
+	if self.dilution == 1 then
+		for i=#self.x-1,1,-1 do
+			for j=1,#self.w[i] do
+				local l = #self.x[i]
+				for k=1,l do
+					self.w[i][j][k] = self.w[i][j][k] + self.dw[i][j][k]
+				end
+				if self.useBias[i] then
+					self.w[i][j][l+1] = self.w[i][j][l+1] + self.dw[i][j][l+1]
+				end
 			end
-			if self.useBias[i] then
-				self.w[i][j][l+1] = self.w[i][j][l+1] + self.dw[i][j][l+1]
+		end
+	else
+		for i=#self.x-1,1,-1 do
+			for j=1,#self.w[i] do
+				local l = #self.x[i]
+				for k=1,l do
+					if math.random() < self.dilution then
+						self.w[i][j][k] = self.w[i][j][k] + self.dw[i][j][k]
+					end
+				end
+				if self.useBias[i] then
+					if math.random() < self.dilution then
+						self.w[i][j][l+1] = self.w[i][j][l+1] + self.dw[i][j][l+1]
+					end
+				end
 			end
 		end
 	end

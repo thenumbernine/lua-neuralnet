@@ -8,7 +8,7 @@ local ANNFFI = require 'neuralnet.ann-ffi'
 local ANNCPP = require 'neuralnet.ann-cpp'
 
 local function makeCpp(name)
-	return {name=name, ctor=ANNCPP(name)}
+	return {name=name, ctor=ANNCPP(name, 'nospeedhacks')}
 end
 
 local cols = table{
@@ -87,8 +87,6 @@ for _,info in ipairs{
 			end
 		end
 	end
-	-- TODO how much is filling the input with __index vs ptr access changing things?
-	-- welp filling is 1/100th the time of feedForward and backProp so :shrug:
 	for i=1,#nn.input do
 		nn.input[i] = src()
 	end

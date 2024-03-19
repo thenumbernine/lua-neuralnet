@@ -7,7 +7,7 @@ or maybe I should switch the C++ vectors to be 0-based vectors and then always n
 
 --]]
 local assertindex = require 'ext.assert'.index
-return function(ctype)
+return function(ctype, nospeedhacks)
 	-- right now ctype is the neural net class name, i.e. NeuralNet::ANN<T>
 	local ANNctor = assertindex(require 'NeuralNetLua', ctype)
 	local Real = assert((ctype:match'^NeuralNet::ANN<(.*)>$'))
@@ -99,41 +99,49 @@ return function(ctype)
 			nn.xErr[#cppnn.layers+1] = cppnn.outputError
 			-- the downside is the nn structure is still read-only ...
 
-			-- THIS IS THE SLOWDOWN
-			-- using the original input as vector-of-Reals, a 1 year summary of nn/prev00000.txt takes 45 seconds
-			-- (with pure lua or luajit-ffi it takes 10 seconds)
-			-- however
-			-- replace nn.input with a cdata ptr and it takes just 5 seconds
+			if nospeedhacks == 'nospeedhacks' then
+				nn.input = nn.x[1]
+				nn.inputError = nn.xErr[1]
+				nn.output = cppnn.output
+				nn.outputError = cppnn.outputError
+				nn.desired = cppnn.desired
+			else
+				-- THIS IS THE SLOWDOWN
+				-- using the original input as vector-of-Reals, a 1 year summary of nn/prev00000.txt takes 45 seconds
+				-- (with pure lua or luajit-ffi it takes 10 seconds)
+				-- however
+				-- replace nn.input with a cdata ptr and it takes just 5 seconds
 
-			--[=[
-			nn.input = nn.layers[1].x
-			--]=]
-			-- [=[ will this help perf?
-			local ffi = require 'ffi'
-			local function tocptr(T, uptr)
-				return ffi.cast(T, assert(tonumber(tostring(uptr):match'^userdata: (.*)$')))
+				--[=[
+				nn.input = nn.layers[1].x
+				--]=]
+				-- [=[ will this help perf?
+				local ffi = require 'ffi'
+				local function tocptr(T, uptr)
+					return ffi.cast(T, assert(tonumber(tostring(uptr):match'^userdata: (.*)$')))
+				end
+				local RealPtr = Real..'*'
+				--local inputptr = tocptr(RealPtr, cppnn.layers[1].x.v:data())
+				--nn.input = inputptr-1	-- make it 1-based
+				-- - need to cast to an array type
+				-- - need to give the array type a metatable ... with a length oeprator (to trick nn.input , and so nn.input still has native access)
+				--[==[ I guess luajit won't let me defined metatables for ctypes that are arrays ... structs only ... and structs don't have overloaded [] operator ...
+				local inputlen = #nn.x[1]
+				local ffitype = ffi.typeof(Real..'(*)['..inputlen..']')
+				-- ... so I can't define the length operator for the nn.input Real* cdata ..
+				ffi.metatype(ffitype, {
+					__len = function() return inputlen end,
+				})
+				--]==]
+				-- hmmmm should I allow overwriting fields in the C wrapper table ..
+				-- at this point why not make a whole new Lua wrapper table ...
+				nn.input = tocptr(RealPtr, cppnn.layers[1].x.v:data()) - 1
+				nn.inputError = tocptr(RealPtr, cppnn.layers[1].xErr.v:data()) - 1
+				nn.output = tocptr(RealPtr, cppnn.output.v:data()) - 1
+				nn.outputError = tocptr(RealPtr, cppnn.outputError.v:data()) - 1
+				nn.desired = tocptr(RealPtr, cppnn.desired.v:data()) - 1
+				--]=]
 			end
-			local RealPtr = Real..'*'
-			--local inputptr = tocptr(RealPtr, cppnn.layers[1].x.v:data())
-			--nn.input = inputptr-1	-- make it 1-based
-			-- - need to cast to an array type
-			-- - need to give the array type a metatable ... with a length oeprator (to trick nn.input , and so nn.input still has native access)
-			--[==[ I guess luajit won't let me defined metatables for ctypes that are arrays ... structs only ... and structs don't have overloaded [] operator ...
-			local inputlen = #nn.x[1]
-			local ffitype = ffi.typeof(Real..'(*)['..inputlen..']')
-			-- ... so I can't define the length operator for the nn.input Real* cdata ..
-			ffi.metatype(ffitype, {
-				__len = function() return inputlen end,
-			})
-			--]==]
-			-- hmmmm should I allow overwriting fields in the C wrapper table ..
-			-- at this point why not make a whole new Lua wrapper table ...
-			nn.input = tocptr(RealPtr, cppnn.layers[1].x.v:data()) - 1
-			nn.inputError = tocptr(RealPtr, cppnn.layers[1].xErr.v:data()) - 1
-			nn.output = tocptr(RealPtr, cppnn.output.v:data()) - 1
-			nn.outputError = tocptr(RealPtr, cppnn.outputError.v:data()) - 1
-			nn.desired = tocptr(RealPtr, cppnn.desired.v:data()) - 1
-			--]=]
 
 			local matrix = require 'matrix'
 			for _,w in ipairs(nn.w) do

@@ -133,9 +133,13 @@ return function(ctype)
 			nn.desired = tocptr(RealPtr, cppnn.desired.v:data()) - 1
 			--]=]
 
+			local matrix = require 'matrix'
 			for _,w in ipairs(nn.w) do
+				function w:size()
+					return matrix{self:height(), self:width()}
+				end
 				function w:toLuaMatrix()
-					return require 'matrix'.lambda({w:height(), w:width()}, function(i,j) return w[i][j] end)
+					return w:size():lambda(function(i,j) return w[i][j] end)
 				end
 			end
 

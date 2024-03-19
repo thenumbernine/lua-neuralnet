@@ -354,17 +354,24 @@ end
 -- update weights by batch ... and then clear the batch
 function ANN:updateBatch()
 	if not self.useBatch then return end
-	for i=#self.x-1,1,-1 do
-		local weight = self.w[i]
-		local wptr = weight.ptr
-		local dweight = self.dw[i]
-		local dwptr = dweight.ptr
-		local h, w = table.unpack(weight.size_)
-		if self.dropout == 1 and self.dilution == 1 then
+	if self.dropout == 1 and self.dilution == 1 then
+		for i=#self.x-1,1,-1 do
+			local weight = self.w[i]
+			local wptr = weight.ptr
+			local dweight = self.dw[i]
+			local dwptr = dweight.ptr
+			local h, w = table.unpack(weight.size_)
 			for jk=0,w*h-1 do
 				wptr[jk] = wptr[jk] + dwptr[jk]
 			end
-		elseif self.dropout < 1 then
+		end
+	elseif self.dropout < 1 then
+		for i=#self.x-1,1,-1 do
+			local weight = self.w[i]
+			local wptr = weight.ptr
+			local dweight = self.dw[i]
+			local dwptr = dweight.ptr
+			local h, w = table.unpack(weight.size_)
 			for k=0,w-2 do
 				if math.random() < self.dropout then
 					for j=0,h-1 do
@@ -379,7 +386,14 @@ function ANN:updateBatch()
 					end
 				end
 			end
-		else	-- dilution
+		end
+	else	-- dilution
+		for i=#self.x-1,1,-1 do
+			local weight = self.w[i]
+			local wptr = weight.ptr
+			local dweight = self.dw[i]
+			local dwptr = dweight.ptr
+			local h, w = table.unpack(weight.size_)
 			for jk=0,w*h-1 do
 				if math.random() < self.dilution then
 					wptr[jk] = wptr[jk] + dwptr[jk]

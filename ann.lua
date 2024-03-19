@@ -57,6 +57,12 @@ end
 ANN.useBatch = false
 ANN.batchCounter = 0	-- keep track of which weight-accumulation we are on
 
+-- what % of matrix *COLUMNS* (i.e. inputs) to zero
+-- seems I've seen some articles say 'zero rows', while others show equations of zeroed lhs matrices, which is zeroing columns, so :shrug:
+-- zeroing the output doesn't seem practical, so zeroing the last layer rows doesn't seem practical
+-- NOTICE - this is exclusive with dilution.  if this is <1 then it will be used first.
+ANN.dropout = 1
+
 -- how many % weights to keep per update
 ANN.dilution = 1
 
@@ -208,7 +214,7 @@ function ANN:backPropagate(dt)
 		-- adjust new weights
 		if not self.useBatch then
 			-- ... directly/immediately
-			if self.dilution == 1 then
+			if self.dropout == 1 and self.dilution == 1 then
 				for j=1,#self.w[i] do
 					local l = #self.x[i]
 					for k=1,l do
@@ -218,7 +224,23 @@ function ANN:backPropagate(dt)
 						self.w[i][j][l+1] = self.w[i][j][l+1] + dt * self.netErr[i][j]
 					end
 				end
-			else
+			elseif self.dropout < 1 then
+				local l = #self.x[i]
+				for k=1,l do
+					if math.random() < self.dropout then
+						for j=1,#self.w[i] do
+							self.w[i][j][k] = self.w[i][j][k] + dt * self.netErr[i][j] * self.x[i][k]
+						end
+					end
+				end
+				if self.useBias[i] then
+					if math.random() < self.dropout then
+						for j=1,#self.w[i] do
+							self.w[i][j][l+1] = self.w[i][j][l+1] + dt * self.netErr[i][j]
+						end
+					end
+				end
+			else	-- dilution
 				for j=1,#self.w[i] do
 					local l = #self.x[i]
 					for k=1,l do
@@ -260,7 +282,7 @@ end
 -- update weights by batch ... and then clear the batch
 function ANN:updateBatch()
 	if not self.useBatch then return end
-	if self.dilution == 1 then
+	if self.dropout == 1 and self.dilution == 1 then
 		for i=#self.x-1,1,-1 do
 			for j=1,#self.w[i] do
 				local l = #self.x[i]
@@ -272,10 +294,28 @@ function ANN:updateBatch()
 				end
 			end
 		end
-	else
+	elseif self.dropout < 1 then
 		for i=#self.x-1,1,-1 do
+			local l = #self.x[i]
+			for k=1,l do
+				if math.random() < self.dropout then
+					for j=1,#self.w[i] do
+						self.w[i][j][k] = self.w[i][j][k] + self.dw[i][j][k]
+					end
+				end
+			end
+			if self.useBias[i] then
+				if math.random() < self.dropout then
+					for j=1,#self.w[i] do
+						self.w[i][j][l+1] = self.w[i][j][l+1] + self.dw[i][j][l+1]
+					end
+				end
+			end
+		end
+	else	-- dilution
+		for i=#self.x-1,1,-1 do
+			local l = #self.x[i]
 			for j=1,#self.w[i] do
-				local l = #self.x[i]
 				for k=1,l do
 					if math.random() < self.dilution then
 						self.w[i][j][k] = self.w[i][j][k] + self.dw[i][j][k]

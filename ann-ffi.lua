@@ -74,6 +74,12 @@ end
 ANN.useBatch = false
 ANN.batchCounter = 0	-- keep track of which overall weight-accumulation we are on
 
+-- what % of matrix *COLUMNS* (i.e. inputs) to zero
+-- seems I've seen some articles say 'zero rows', while others show equations of zeroed lhs matrices, which is zeroing columns, so :shrug:
+-- zeroing the output doesn't seem practical, so zeroing the last layer rows doesn't seem practical
+-- NOTICE - this is exclusive with dilution.  if this is <1 then it will be used first.
+ANN.dropout = 1
+
 -- how many % weights to keep per update
 ANN.dilution = 1
 
@@ -278,7 +284,7 @@ function ANN:backPropagate(dt)
 		-- adjust new weights
 		if not self.useBatch then
 			-- ... directly/immediately
-			if self.dilution == 1 then
+			if self.dropout == 1 and self.dilution == 1 then
 				for k=0,w-2 do
 					for j=0,h-1 do
 						wptr[j * w + k] = wptr[j * w + k] + dt * netErrptr[j] * xptr[k]
@@ -289,7 +295,22 @@ function ANN:backPropagate(dt)
 						wptr[j * w + (w-1)] = wptr[j * w + (w-1)] + dt * netErrptr[j]
 					end
 				end
-			else
+			elseif self.dropout < 1 then
+				for k=0,w-2 do
+					if math.random() < self.dropout then
+						for j=0,h-1 do
+							wptr[j * w + k] = wptr[j * w + k] + dt * netErrptr[j] * xptr[k]
+						end
+					end
+				end
+				if self.useBias[i] then
+					if math.random() < self.dropout then
+						for j=0,h-1 do
+							wptr[j * w + (w-1)] = wptr[j * w + (w-1)] + dt * netErrptr[j]
+						end
+					end
+				end
+			else	-- dilution
 				for k=0,w-2 do
 					for j=0,h-1 do
 						if math.random() < self.dilution then
@@ -339,11 +360,26 @@ function ANN:updateBatch()
 		local dweight = self.dw[i]
 		local dwptr = dweight.ptr
 		local h, w = table.unpack(weight.size_)
-		if self.dilution == 1 then
+		if self.dropout == 1 and self.dilution == 1 then
 			for jk=0,w*h-1 do
 				wptr[jk] = wptr[jk] + dwptr[jk]
 			end
-		else
+		elseif self.dropout < 1 then
+			for k=0,w-2 do
+				if math.random() < self.dropout then
+					for j=0,h-1 do
+						wptr[j * w + k] = wptr[j * w + k] + dwptr[j * w + k]
+					end
+				end
+			end
+			if self.useBias[i] then
+				if math.random() < self.dropout then
+					for j=0,h-1 do
+						wptr[j * w + (w-1)] = wptr[j * w + (w-1)] + dwptr[j * w + (w-1)]
+					end
+				end
+			end
+		else	-- dilution
 			for jk=0,w*h-1 do
 				if math.random() < self.dilution then
 					wptr[jk] = wptr[jk] + dwptr[jk]

@@ -340,7 +340,8 @@ end
 
 function ANN:clone()
 	local table = require 'ext.table'
-	local clone = ANN(table.mapi(self.x, function(x) return #x end):unpack())
+	local layerSizes = table.mapi(self.x, function(x) return #x end)
+	local clone = ANN(layerSizes:unpack())
 
 	tableCopy(clone.useBias, self.useBias)
 	tableCopy(clone.activations, self.activations)

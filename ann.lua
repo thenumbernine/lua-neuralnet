@@ -78,7 +78,7 @@ function ANN:init(...)
 	for i=1,#layerSizes do
 		self.x[i] = self:newMatrix(layerSizes[i])
 		self.xErr[i] = self:newMatrix(layerSizes[i])
-		if i<#layerSizes then
+		if i < #layerSizes then
 			self.w[i] = self:newWeights(layerSizes[i+1], layerSizes[i]+1)
 			self.useBias[i] = true
 			self.net[i] = self:newMatrix(layerSizes[i+1])
@@ -330,6 +330,35 @@ function ANN:updateBatch()
 		end
 	end
 	self:clearBatch()
+end
+
+local function tableCopy(dst, src)
+	for i=1,#src do
+		dst[i] = src[i]
+	end
+end
+
+function ANN:clone()
+	local table = require 'ext.table'
+	local clone = ANN(table.mapi(self.x, function(x) return #x end):unpack())
+
+	tableCopy(clone.useBias, self.useBias)
+	tableCopy(clone.activations, self.activations)
+	tableCopy(clone.activationDerivs, self.activationDerivs)
+	for i=1,#layerSizes do
+		tableCopy(clone.x[i], self.x[i])
+		tableCopy(clone.xErr[i], self.xErr[i])
+		if i < #layerSizes then
+			for j=1,#self.w[i] do
+				tableCopy(clone.w[i][j], self.w[i][j])
+				tableCopy(clone.dw[i][j], self.dw[i][j])
+			end
+			tableCopy(clone.net[i], self.net[i])
+			tableCopy(clone.netErr[i], self.net[i])
+		end
+	end
+
+	return clone
 end
 
 return ANN

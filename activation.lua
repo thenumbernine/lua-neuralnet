@@ -5,6 +5,13 @@ local function identity(x) return x end
 
 local function tanhDeriv(x,y) return 1 - y * y end
 
+local function sigmoid(x)
+	return 1 / (1 + math.exp(-x))
+end
+local function sigmoidDeriv(x,y)
+	return y * (1 - y)
+end
+
 local function poorLinearTanh(x)
 	return x < -1 and -1
 	or x < 1 and x
@@ -80,13 +87,16 @@ return {
 		one = one,
 		tanh = math.tanh,
 		tanhDeriv = tanhDeriv,
+		sigmoid = sigmoid,
+		sigmoidDeriv = sigmoidDeriv,
+		ReLU = ReLU,
+		ReLUDeriv = ReLUDeriv,
+		
 		poorLinearTanh = poorLinearTanh,
 		poorLinearTanhDeriv = poorLinearTanhDeriv,
 		poorQuadraticTanh = poorQuadraticTanh,
 		poorQuadraticTanhDeriv = poorQuadraticTanhDeriv,
 		poorCubicTanh = poorCubicTanh,
 		poorCubicTanhDeriv = poorCubicTanhDeriv,
-		ReLU = ReLU,
-		ReLUDeriv = ReLUDeriv,
 	},
 }

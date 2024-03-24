@@ -166,7 +166,11 @@ return function(ctype, nospeedhacks)
 					return w:size():lambda(function(i,j) return w[i][j] end)
 				end
 			end
-
+			for _,x in ipairs(nn.x) do
+				function x:toLuaMatrix()
+					return matrix{#x}:lambda(function(i) return x[i] end)
+				end
+			end
 			return nn
 		end,
 	})

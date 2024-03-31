@@ -171,6 +171,23 @@ return function(ctype, nospeedhacks)
 					return matrix{#x}:lambda(function(i) return x[i] end)
 				end
 			end
+
+			local origNewVector = nn.newVector
+			local origNewMatrix = nn.newMatrix
+			function nn:newMatrix(...)
+				local n = select('#', ...)
+				if n == 0 then
+					error('expected dimensions')
+				elseif n == 1 then
+					-- TODO these nils ... I knew it was a bad idea to differentiate between class static member functions and normal functions
+					return origNewVector(nil, ...)
+				elseif n == 2 then
+					return origNewMatrix(nil, ...)
+				else
+					error("I don't support rank-"..n.." yet")
+				end
+			end
+
 			return nn
 		end,
 	})

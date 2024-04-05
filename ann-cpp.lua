@@ -9,11 +9,11 @@ or maybe I should switch the C++ vectors to be 0-based vectors and then always n
 local assertindex = require 'ext.assert'.index
 return function(ctype, nospeedhacks)
 	-- right now ctype is the neural net class name, i.e. NeuralNet::ANN<T>
-	local ANNctor = assertindex(require 'NeuralNetLua', ctype)
+	local ANNmt = assertindex(require 'NeuralNetLua', ctype)
 	local Real = assert((ctype:match'^NeuralNet::ANN<(.*)>$'))
 	local ANN = setmetatable({}, {
 		__call = function(ANN, ...)
-			local cppnn = ANNctor(...)
+			local cppnn = ANNmt(...)
 
 			-- TODO I can't modify ANN.useBatch and have it reflect on all objs ... until I expose static members in the MT
 			-- ... but even if I did that, I'd have to separate the static-class-default from the per-network weight ...
@@ -158,31 +158,42 @@ return function(ctype, nospeedhacks)
 			end
 
 			local matrix = require 'matrix'
-			for _,w in ipairs(nn.w) do
+			
+			local function fixW(w)
 				function w:size()
 					return matrix{self:height(), self:width()}
 				end
 				function w:toLuaMatrix()
 					return w:size():lambda(function(i,j) return w[i][j] end)
 				end
+				return w
 			end
-			for _,x in ipairs(nn.x) do
+
+			local function fixX(x)
 				function x:toLuaMatrix()
 					return matrix{#x}:lambda(function(i) return x[i] end)
 				end
+				return x
 			end
 
-			local origNewVector = nn.newVector
-			local origNewMatrix = nn.newMatrix
+			for _,w in ipairs(nn.w) do
+				fixW(w)
+			end
+			for _,x in ipairs(nn.x) do
+				fixX(x)
+			end
+
+			local origNewVector = cppnn.newVector
+			local origNewMatrix = cppnn.newMatrix
 			function nn:newMatrix(...)
 				local n = select('#', ...)
 				if n == 0 then
 					error('expected dimensions')
 				elseif n == 1 then
 					-- TODO these nils ... I knew it was a bad idea to differentiate between class static member functions and normal functions
-					return origNewVector(nil, ...)
+					return fixX(origNewVector(nil, ...))
 				elseif n == 2 then
-					return origNewMatrix(nil, ...)
+					return fixW(origNewMatrix(nil, ...))
 				else
 					error("I don't support rank-"..n.." yet")
 				end

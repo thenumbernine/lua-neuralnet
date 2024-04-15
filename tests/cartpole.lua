@@ -21,6 +21,7 @@ local StateDescription = class()
 
 function StateDescription:createNeuralNetwork(...)
 	local rlnn = TDNN(...)
+	rlnn.alpha = .1
 	rlnn.gamma = .9
 	rlnn.noise = 0
 	for k=1,#rlnn.nn.w do
@@ -215,13 +216,15 @@ local createNeuralNetwork = ({
 		
 		local rlnn = desc:createNeuralNetwork(desc.numStates, desc.numStates, desc.numActions)
 		
-		-- without initializing it to identity (which makes it redundant) there seems to be a lot of noise ...
+		-- [[ without initializing it to identity (which makes it redundant) there seems to be a lot of noise ...
 		for i=1,#rlnn.nn.w[2] do
 			for j=1,#rlnn.nn.w[2][i] do
-				rlnn.nn.w[2][i][j] = i == j and 1 or 0
+				--rlnn.nn.w[2][i][j] = i == j and 1 or 0
+				rlnn.nn.w[2][i][j] = (math.random() - .5) * .1
 			end
 		end
-		
+		--]]
+
 		return rlnn
 	end,
 

@@ -48,10 +48,10 @@ function PokerCard:numberStr()
 	})[self.value] or tostring(self.value+1)
 end
 
-local charHeart = 'h'
-local charSpade = 's'
-local charDiamond = 'd'
-local charClub = 'c'
+local charHeart = '♥'
+local charSpade = '♠'
+local charDiamond = '♦'
+local charClub = '♣'
 
 PokerCard.suits = {charHeart, charSpade, charDiamond, charClub}
 

@@ -6,7 +6,7 @@ local gl = require 'gl'
 local ANN = require 'neuralnet.ann'
 
 local App = require 'imguiapp.withorbit'()
-
+App.viewUseGLMatrixMode = true
 local f = math.sin
 local xmin = 0
 local xmax = 2 * math.pi

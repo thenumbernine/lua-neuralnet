@@ -35,7 +35,7 @@ function StateDescription:createNeuralNetwork(...)
 	return rlnn
 end
 
-local DiscreteStateDescription = class(StateDescription)
+local DiscreteStateDescription = StateDescription:subclass()
 
 function DiscreteStateDescription:createNeuralNetwork(...)
 	local rlnn = DiscreteStateDescription.super.createNeuralNetwork(self, ...)
@@ -111,7 +111,7 @@ function DiscreteStateDescription:getState(x, dx_dt, theta, dtheta_dt)
 end
 
 
-local ContinuousStateDescription = class(StateDescription)
+local ContinuousStateDescription = StateDescription:subclass()
 
 ContinuousStateDescription.numActions = 3
 ContinuousStateDescription.numStates = 4
@@ -346,7 +346,8 @@ function Cart:simulate(action)
 end
 local cart = Cart()
 
-local CartPoleGLApp = class(GLApp)
+local CartPoleGLApp = GLApp:subclass()
+CartPoleGLApp.viewUseGLMatrixMode = true
 function CartPoleGLApp:update()
 	gl.glClear(gl.GL_COLOR_BUFFER_BIT)
 

@@ -5,9 +5,7 @@ but I'm only seeing a 3% increase in speed (For very small networks, like the xo
 local ffi = require 'ffi'
 local matrix = require 'matrix.ffi'
 local class = require 'ext.class'
-local asserteq = require 'ext.assert'.eq
-local assertne = require 'ext.assert'.ne
-local assertindex = require 'ext.assert'.index
+local assert = require 'ext.assert'
 local activations = require 'neuralnet.activation'
 
 --[[
@@ -30,7 +28,7 @@ local rowmajor = true
 -- since just getmetatable(nn.w) isn't enough to preserve rowmajor etc
 function ANN:newMatrix(...)
 	local m = matrix.zeros({...}, nil, rowmajor)
-	asserteq(m.rowmajor, rowmajor)
+	assert.eq(m.rowmajor, rowmajor)
 	return m
 end
 
@@ -55,8 +53,8 @@ local function multiplyWithBias(m, vin, vout, useBias)
 	local vinptr = vin.ptr
 	local voutptr = vout.ptr
 	local h, w = m.size_:unpack()
-	asserteq(w, #vin + 1)
-	asserteq(h, #vout)
+	assert.eq(w, #vin + 1)
+	assert.eq(h, #vout)
 	for i=0,h-1 do
 		local s = 0
 		for j=0,w-2 do
@@ -116,7 +114,7 @@ function ANN:init(...)
 end
 
 function ANN:setActivation(func, index)
-	if type(func) == 'string' then func = assertindex(activations.funcs, func) end
+	if type(func) == 'string' then func = assert.index(activations.funcs, func) end
 	if index then
 		self.activations[index] = func
 	else
@@ -127,7 +125,7 @@ function ANN:setActivation(func, index)
 end
 
 function ANN:setActivationDeriv(func, index)
-	if type(func) == 'string' then func = assertindex(activations.funcs, func) end
+	if type(func) == 'string' then func = assert.index(activations.funcs, func) end
 	if index then
 		self.activationDerivs[index] = func
 	else
@@ -150,8 +148,8 @@ function ANN:feedForward()
 		local xkptr = xk.ptr
 		local netkptr = netk.ptr
 		local h, w = self.w[k].size_:unpack()
---DEBUG: asserteq(w, #xk + 1)
---DEBUG: asserteq(h, #netk)
+--DEBUG: assert.eq(w, #xk + 1)
+--DEBUG: assert.eq(h, #netk)
 		local activation = self.activations[k]
 		for i=0,h-1 do
 			local s = 0
@@ -174,8 +172,8 @@ function ANN:feedForward()
 		local useBias = self.useBias[k]
 		local activation = self.activations[k]
 		local mijptr = m.ptr
---DEBUG: asserteq(m.size_[2], #self.x[k] + 1)
---DEBUG: asserteq(m.size_[1], #self.net[k])
+--DEBUG: assert.eq(m.size_[2], #self.x[k] + 1)
+--DEBUG: assert.eq(m.size_[1], #self.net[k])
 		local xptr = self.x[k].ptr
 		local xendptr = xptr + m.size_[2] - 1	-- stop short of the bias
 		local netiptr = self.net[k].ptr
@@ -199,9 +197,9 @@ function ANN:feedForward()
 			netiptr = netiptr + 1ULL
 			yiptr = yiptr + 1ULL
 		end
---DEBUG: asserteq(mijptr, m.ptr + m.size_[2] * m.size_[1])
---DEBUG: asserteq(netiptr, self.net[k].ptr + m.size_[1])
---DEBUG: asserteq(yiptr, self.x[k+1].ptr + m.size_[1])
+--DEBUG: assert.eq(mijptr, m.ptr + m.size_[2] * m.size_[1])
+--DEBUG: assert.eq(netiptr, self.net[k].ptr + m.size_[1])
+--DEBUG: assert.eq(yiptr, self.x[k+1].ptr + m.size_[1])
 		--]]
 
 	end
@@ -222,7 +220,7 @@ dnet_n,i/dx_n,j = w_n,i,j
 dnet_n,i/dw_n,ij = x_n,j, all others are zero
 --]]
 function ANN:calcError()
---DEBUG: asserteq(#self.desired, #self.outputError)
+--DEBUG: assert.eq(#self.desired, #self.outputError)
 	local desiredptr = self.desired.ptr
 	local outputptr = self.output.ptr
 	local outputErrorptr = self.outputError.ptr
@@ -240,7 +238,7 @@ function ANN:clearBatch()
 	for i=#self.x-1,1,-1 do
 		local dw = self.dw[i]
 		local h, w = table.unpack(dw.size_)
---DEBUG: asserteq(w, #self.x[i] + 1)
+--DEBUG: assert.eq(w, #self.x[i] + 1)
 		ffi.fill(dw.ptr, ffi.sizeof(dw.ctype) * w * h)
 	end
 end
@@ -263,7 +261,7 @@ function ANN:backPropagate(dt)
 		local xptr = self.x[i].ptr
 		local netptr = self.net[i].ptr
 		local netErr = self.netErr[i]
---DEBUG: asserteq(#netErr, #self.x[i+1])
+--DEBUG: assert.eq(#netErr, #self.x[i+1])
 		local netErrptr = netErr.ptr
 		--local w = #self.x[i]
 		--local h = #netErr

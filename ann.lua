@@ -1,7 +1,7 @@
 local matrix = require 'matrix'
 --local matrix = require 'matrix.ffi' -- still segfaults, still not a perfect replacement
 local class = require 'ext.class'
-local assertindex = require 'ext.assert'.index
+local assert = require 'ext.assert'
 local activations = require 'neuralnet.activation'
 
 --[[
@@ -98,7 +98,7 @@ function ANN:init(...)
 end
 
 function ANN:setActivation(func, index)
-	if type(func) == 'string' then func = assertindex(activations.funcs, func) end
+	if type(func) == 'string' then func = assert.index(activations.funcs, func) end
 	if index then
 		self.activations[index] = func
 	else
@@ -109,7 +109,7 @@ function ANN:setActivation(func, index)
 end
 
 function ANN:setActivationDeriv(func, index)
-	if type(func) == 'string' then func = assertindex(activations.funcs, func) end
+	if type(func) == 'string' then func = assert.index(activations.funcs, func) end
 	if index then
 		self.activationDerivs[index] = func
 	else

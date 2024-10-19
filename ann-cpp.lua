@@ -6,10 +6,10 @@ idk maybe I should switch Lua to this?
 or maybe I should switch the C++ vectors to be 0-based vectors and then always need a wrapper to abstract it from Lua?
 
 --]]
-local assertindex = require 'ext.assert'.index
+local assert = require 'ext.assert'
 return function(ctype, nospeedhacks)
 	-- right now ctype is the neural net class name, i.e. NeuralNet::ANN<T>
-	local ANNmt = assertindex(require 'NeuralNetLua', ctype)
+	local ANNmt = assert.index(require 'NeuralNetLua', ctype)
 	local Real = assert((ctype:match'^NeuralNet::ANN<(.*)>$'))
 	local ANN = setmetatable({}, {
 		__call = function(ANN, ...)

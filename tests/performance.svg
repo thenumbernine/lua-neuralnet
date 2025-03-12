@@ -7,7 +7,7 @@
 >
 
 <title>Gnuplot</title>
-<desc>Produced by GNUPLOT 5.4 patchlevel 4 </desc>
+<desc>Produced by GNUPLOT 6.0 patchlevel 2 </desc>
 
 <g id="gnuplot_canvas">
 
@@ -92,147 +92,147 @@
 	</g>
 </g>
 <g fill="none" color="black" stroke="currentColor" stroke-width="1.00" stroke-linecap="butt" stroke-linejoin="miter">
-	<path stroke='black'  d='M74.91,1551.77 L74.91,1542.77 M74.91,18.01 L74.91,27.01  '/>	<g transform="translate(71.01,1560.16) rotate(90)" stroke="none" fill="black" font-family="Arial" font-size="12.00"  text-anchor="start">
+	<path stroke='black'  d='M74.91,1551.77 L74.91,1542.77 M74.91,18.01 L74.91,27.01  '/>	<g transform="translate(71.01,1560.16) rotate(90.00)" stroke="none" fill="black" font-family="Arial" font-size="12.00"  text-anchor="start">
 		<text><tspan font-family="Arial" >222,80,40,2</tspan><tspan font-family="Arial" > ann</tspan></text>
 	</g>
 </g>
 <g fill="none" color="black" stroke="currentColor" stroke-width="1.00" stroke-linecap="butt" stroke-linejoin="miter">
-	<path stroke='black'  d='M106.88,1551.77 L106.88,1542.77 M106.88,18.01 L106.88,27.01  '/>	<g transform="translate(102.98,1560.16) rotate(90)" stroke="none" fill="black" font-family="Arial" font-size="12.00"  text-anchor="start">
+	<path stroke='black'  d='M106.88,1551.77 L106.88,1542.77 M106.88,18.01 L106.88,27.01  '/>	<g transform="translate(102.98,1560.16) rotate(90.00)" stroke="none" fill="black" font-family="Arial" font-size="12.00"  text-anchor="start">
 		<text><tspan font-family="Arial" >222,80,40,2</tspan><tspan font-family="Arial" > ann-ffi[float]</tspan></text>
 	</g>
 </g>
 <g fill="none" color="black" stroke="currentColor" stroke-width="1.00" stroke-linecap="butt" stroke-linejoin="miter">
-	<path stroke='black'  d='M138.85,1551.77 L138.85,1542.77 M138.85,18.01 L138.85,27.01  '/>	<g transform="translate(134.95,1560.16) rotate(90)" stroke="none" fill="black" font-family="Arial" font-size="12.00"  text-anchor="start">
+	<path stroke='black'  d='M138.85,1551.77 L138.85,1542.77 M138.85,18.01 L138.85,27.01  '/>	<g transform="translate(134.95,1560.16) rotate(90.00)" stroke="none" fill="black" font-family="Arial" font-size="12.00"  text-anchor="start">
 		<text><tspan font-family="Arial" >222,80,40,2</tspan><tspan font-family="Arial" > ann-ffi[double]</tspan></text>
 	</g>
 </g>
 <g fill="none" color="black" stroke="currentColor" stroke-width="1.00" stroke-linecap="butt" stroke-linejoin="miter">
-	<path stroke='black'  d='M170.82,1551.77 L170.82,1542.77 M170.82,18.01 L170.82,27.01  '/>	<g transform="translate(166.92,1560.16) rotate(90)" stroke="none" fill="black" font-family="Arial" font-size="12.00"  text-anchor="start">
+	<path stroke='black'  d='M170.82,1551.77 L170.82,1542.77 M170.82,18.01 L170.82,27.01  '/>	<g transform="translate(166.92,1560.16) rotate(90.00)" stroke="none" fill="black" font-family="Arial" font-size="12.00"  text-anchor="start">
 		<text><tspan font-family="Arial" >222,80,40,2</tspan><tspan font-family="Arial" > NeuralNet::ANN&lt;float></tspan></text>
 	</g>
 </g>
 <g fill="none" color="black" stroke="currentColor" stroke-width="1.00" stroke-linecap="butt" stroke-linejoin="miter">
-	<path stroke='black'  d='M202.79,1551.77 L202.79,1542.77 M202.79,18.01 L202.79,27.01  '/>	<g transform="translate(198.89,1560.16) rotate(90)" stroke="none" fill="black" font-family="Arial" font-size="12.00"  text-anchor="start">
+	<path stroke='black'  d='M202.79,1551.77 L202.79,1542.77 M202.79,18.01 L202.79,27.01  '/>	<g transform="translate(198.89,1560.16) rotate(90.00)" stroke="none" fill="black" font-family="Arial" font-size="12.00"  text-anchor="start">
 		<text><tspan font-family="Arial" >222,80,40,2</tspan><tspan font-family="Arial" > NeuralNet::ANN&lt;double></tspan></text>
 	</g>
 </g>
 <g fill="none" color="black" stroke="currentColor" stroke-width="1.00" stroke-linecap="butt" stroke-linejoin="miter">
-	<path stroke='black'  d='M234.76,1551.77 L234.76,1542.77 M234.76,18.01 L234.76,27.01  '/>	<g transform="translate(230.86,1560.16) rotate(90)" stroke="none" fill="black" font-family="Arial" font-size="12.00"  text-anchor="start">
+	<path stroke='black'  d='M234.76,1551.77 L234.76,1542.77 M234.76,18.01 L234.76,27.01  '/>	<g transform="translate(230.86,1560.16) rotate(90.00)" stroke="none" fill="black" font-family="Arial" font-size="12.00"  text-anchor="start">
 		<text><tspan font-family="Arial" >222,80,40,2</tspan><tspan font-family="Arial" > NeuralNet::ANN&lt;std::float32</tspan><tspan font-family="Arial"  font-size="9.6" dy="3.60px">t</tspan><tspan font-family="Arial"  font-size="12.0" dy="-3.60px">></tspan></text>
 	</g>
 </g>
 <g fill="none" color="black" stroke="currentColor" stroke-width="1.00" stroke-linecap="butt" stroke-linejoin="miter">
-	<path stroke='black'  d='M266.73,1551.77 L266.73,1542.77 M266.73,18.01 L266.73,27.01  '/>	<g transform="translate(262.83,1560.16) rotate(90)" stroke="none" fill="black" font-family="Arial" font-size="12.00"  text-anchor="start">
+	<path stroke='black'  d='M266.73,1551.77 L266.73,1542.77 M266.73,18.01 L266.73,27.01  '/>	<g transform="translate(262.83,1560.16) rotate(90.00)" stroke="none" fill="black" font-family="Arial" font-size="12.00"  text-anchor="start">
 		<text><tspan font-family="Arial" >222,80,40,2</tspan><tspan font-family="Arial" > NeuralNet::ANN&lt;std::float64</tspan><tspan font-family="Arial"  font-size="9.6" dy="3.60px">t</tspan><tspan font-family="Arial"  font-size="12.0" dy="-3.60px">></tspan></text>
 	</g>
 </g>
 <g fill="none" color="black" stroke="currentColor" stroke-width="1.00" stroke-linecap="butt" stroke-linejoin="miter">
-	<path stroke='black'  d='M298.70,1551.77 L298.70,1542.77 M298.70,18.01 L298.70,27.01  '/>	<g transform="translate(294.80,1560.16) rotate(90)" stroke="none" fill="black" font-family="Arial" font-size="12.00"  text-anchor="start">
+	<path stroke='black'  d='M298.70,1551.77 L298.70,1542.77 M298.70,18.01 L298.70,27.01  '/>	<g transform="translate(294.80,1560.16) rotate(90.00)" stroke="none" fill="black" font-family="Arial" font-size="12.00"  text-anchor="start">
 		<text><tspan font-family="Arial" >222,80,40,2</tspan><tspan font-family="Arial" > NeuralNet::ANN&lt;std::float16</tspan><tspan font-family="Arial"  font-size="9.6" dy="3.60px">t</tspan><tspan font-family="Arial"  font-size="12.0" dy="-3.60px">></tspan></text>
 	</g>
 </g>
 <g fill="none" color="black" stroke="currentColor" stroke-width="1.00" stroke-linecap="butt" stroke-linejoin="miter">
-	<path stroke='black'  d='M330.67,1551.77 L330.67,1542.77 M330.67,18.01 L330.67,27.01  '/>	<g transform="translate(326.77,1560.16) rotate(90)" stroke="none" fill="black" font-family="Arial" font-size="12.00"  text-anchor="start">
+	<path stroke='black'  d='M330.67,1551.77 L330.67,1542.77 M330.67,18.01 L330.67,27.01  '/>	<g transform="translate(326.77,1560.16) rotate(90.00)" stroke="none" fill="black" font-family="Arial" font-size="12.00"  text-anchor="start">
 		<text><tspan font-family="Arial" >222,80,40,2</tspan><tspan font-family="Arial" > NeuralNet::ANN&lt;std::bfloat16</tspan><tspan font-family="Arial"  font-size="9.6" dy="3.60px">t</tspan><tspan font-family="Arial"  font-size="12.0" dy="-3.60px">></tspan></text>
 	</g>
 </g>
 <g fill="none" color="black" stroke="currentColor" stroke-width="1.00" stroke-linecap="butt" stroke-linejoin="miter">
-	<path stroke='black'  d='M362.63,1551.77 L362.63,1542.77 M362.63,18.01 L362.63,27.01  '/>	<g transform="translate(358.73,1560.16) rotate(90)" stroke="none" fill="black" font-family="Arial" font-size="12.00"  text-anchor="start">
+	<path stroke='black'  d='M362.63,1551.77 L362.63,1542.77 M362.63,18.01 L362.63,27.01  '/>	<g transform="translate(358.73,1560.16) rotate(90.00)" stroke="none" fill="black" font-family="Arial" font-size="12.00"  text-anchor="start">
 		<text><tspan font-family="Arial" >222,80,40,2</tspan><tspan font-family="Arial" > NeuralNet::ANN&lt;long double></tspan></text>
 	</g>
 </g>
 <g fill="none" color="black" stroke="currentColor" stroke-width="1.00" stroke-linecap="butt" stroke-linejoin="miter">
-	<path stroke='black'  d='M394.60,1551.77 L394.60,1542.77 M394.60,18.01 L394.60,27.01  '/>	<g transform="translate(390.70,1560.16) rotate(90)" stroke="none" fill="black" font-family="Arial" font-size="12.00"  text-anchor="start">
+	<path stroke='black'  d='M394.60,1551.77 L394.60,1542.77 M394.60,18.01 L394.60,27.01  '/>	<g transform="translate(390.70,1560.16) rotate(90.00)" stroke="none" fill="black" font-family="Arial" font-size="12.00"  text-anchor="start">
 		<text><tspan font-family="Arial" >104,40,40,40,2</tspan><tspan font-family="Arial" > ann</tspan></text>
 	</g>
 </g>
 <g fill="none" color="black" stroke="currentColor" stroke-width="1.00" stroke-linecap="butt" stroke-linejoin="miter">
-	<path stroke='black'  d='M426.57,1551.77 L426.57,1542.77 M426.57,18.01 L426.57,27.01  '/>	<g transform="translate(422.67,1560.16) rotate(90)" stroke="none" fill="black" font-family="Arial" font-size="12.00"  text-anchor="start">
+	<path stroke='black'  d='M426.57,1551.77 L426.57,1542.77 M426.57,18.01 L426.57,27.01  '/>	<g transform="translate(422.67,1560.16) rotate(90.00)" stroke="none" fill="black" font-family="Arial" font-size="12.00"  text-anchor="start">
 		<text><tspan font-family="Arial" >104,40,40,40,2</tspan><tspan font-family="Arial" > ann-ffi[float]</tspan></text>
 	</g>
 </g>
 <g fill="none" color="black" stroke="currentColor" stroke-width="1.00" stroke-linecap="butt" stroke-linejoin="miter">
-	<path stroke='black'  d='M458.54,1551.77 L458.54,1542.77 M458.54,18.01 L458.54,27.01  '/>	<g transform="translate(454.64,1560.16) rotate(90)" stroke="none" fill="black" font-family="Arial" font-size="12.00"  text-anchor="start">
+	<path stroke='black'  d='M458.54,1551.77 L458.54,1542.77 M458.54,18.01 L458.54,27.01  '/>	<g transform="translate(454.64,1560.16) rotate(90.00)" stroke="none" fill="black" font-family="Arial" font-size="12.00"  text-anchor="start">
 		<text><tspan font-family="Arial" >104,40,40,40,2</tspan><tspan font-family="Arial" > ann-ffi[double]</tspan></text>
 	</g>
 </g>
 <g fill="none" color="black" stroke="currentColor" stroke-width="1.00" stroke-linecap="butt" stroke-linejoin="miter">
-	<path stroke='black'  d='M490.51,1551.77 L490.51,1542.77 M490.51,18.01 L490.51,27.01  '/>	<g transform="translate(486.61,1560.16) rotate(90)" stroke="none" fill="black" font-family="Arial" font-size="12.00"  text-anchor="start">
+	<path stroke='black'  d='M490.51,1551.77 L490.51,1542.77 M490.51,18.01 L490.51,27.01  '/>	<g transform="translate(486.61,1560.16) rotate(90.00)" stroke="none" fill="black" font-family="Arial" font-size="12.00"  text-anchor="start">
 		<text><tspan font-family="Arial" >104,40,40,40,2</tspan><tspan font-family="Arial" > NeuralNet::ANN&lt;float></tspan></text>
 	</g>
 </g>
 <g fill="none" color="black" stroke="currentColor" stroke-width="1.00" stroke-linecap="butt" stroke-linejoin="miter">
-	<path stroke='black'  d='M522.48,1551.77 L522.48,1542.77 M522.48,18.01 L522.48,27.01  '/>	<g transform="translate(518.58,1560.16) rotate(90)" stroke="none" fill="black" font-family="Arial" font-size="12.00"  text-anchor="start">
+	<path stroke='black'  d='M522.48,1551.77 L522.48,1542.77 M522.48,18.01 L522.48,27.01  '/>	<g transform="translate(518.58,1560.16) rotate(90.00)" stroke="none" fill="black" font-family="Arial" font-size="12.00"  text-anchor="start">
 		<text><tspan font-family="Arial" >104,40,40,40,2</tspan><tspan font-family="Arial" > NeuralNet::ANN&lt;double></tspan></text>
 	</g>
 </g>
 <g fill="none" color="black" stroke="currentColor" stroke-width="1.00" stroke-linecap="butt" stroke-linejoin="miter">
-	<path stroke='black'  d='M554.45,1551.77 L554.45,1542.77 M554.45,18.01 L554.45,27.01  '/>	<g transform="translate(550.55,1560.16) rotate(90)" stroke="none" fill="black" font-family="Arial" font-size="12.00"  text-anchor="start">
+	<path stroke='black'  d='M554.45,1551.77 L554.45,1542.77 M554.45,18.01 L554.45,27.01  '/>	<g transform="translate(550.55,1560.16) rotate(90.00)" stroke="none" fill="black" font-family="Arial" font-size="12.00"  text-anchor="start">
 		<text><tspan font-family="Arial" >104,40,40,40,2</tspan><tspan font-family="Arial" > NeuralNet::ANN&lt;std::float32</tspan><tspan font-family="Arial"  font-size="9.6" dy="3.60px">t</tspan><tspan font-family="Arial"  font-size="12.0" dy="-3.60px">></tspan></text>
 	</g>
 </g>
 <g fill="none" color="black" stroke="currentColor" stroke-width="1.00" stroke-linecap="butt" stroke-linejoin="miter">
-	<path stroke='black'  d='M586.42,1551.77 L586.42,1542.77 M586.42,18.01 L586.42,27.01  '/>	<g transform="translate(582.52,1560.16) rotate(90)" stroke="none" fill="black" font-family="Arial" font-size="12.00"  text-anchor="start">
+	<path stroke='black'  d='M586.42,1551.77 L586.42,1542.77 M586.42,18.01 L586.42,27.01  '/>	<g transform="translate(582.52,1560.16) rotate(90.00)" stroke="none" fill="black" font-family="Arial" font-size="12.00"  text-anchor="start">
 		<text><tspan font-family="Arial" >104,40,40,40,2</tspan><tspan font-family="Arial" > NeuralNet::ANN&lt;std::float64</tspan><tspan font-family="Arial"  font-size="9.6" dy="3.60px">t</tspan><tspan font-family="Arial"  font-size="12.0" dy="-3.60px">></tspan></text>
 	</g>
 </g>
 <g fill="none" color="black" stroke="currentColor" stroke-width="1.00" stroke-linecap="butt" stroke-linejoin="miter">
-	<path stroke='black'  d='M618.39,1551.77 L618.39,1542.77 M618.39,18.01 L618.39,27.01  '/>	<g transform="translate(614.49,1560.16) rotate(90)" stroke="none" fill="black" font-family="Arial" font-size="12.00"  text-anchor="start">
+	<path stroke='black'  d='M618.39,1551.77 L618.39,1542.77 M618.39,18.01 L618.39,27.01  '/>	<g transform="translate(614.49,1560.16) rotate(90.00)" stroke="none" fill="black" font-family="Arial" font-size="12.00"  text-anchor="start">
 		<text><tspan font-family="Arial" >104,40,40,40,2</tspan><tspan font-family="Arial" > NeuralNet::ANN&lt;std::float16</tspan><tspan font-family="Arial"  font-size="9.6" dy="3.60px">t</tspan><tspan font-family="Arial"  font-size="12.0" dy="-3.60px">></tspan></text>
 	</g>
 </g>
 <g fill="none" color="black" stroke="currentColor" stroke-width="1.00" stroke-linecap="butt" stroke-linejoin="miter">
-	<path stroke='black'  d='M650.36,1551.77 L650.36,1542.77 M650.36,18.01 L650.36,27.01  '/>	<g transform="translate(646.46,1560.16) rotate(90)" stroke="none" fill="black" font-family="Arial" font-size="12.00"  text-anchor="start">
+	<path stroke='black'  d='M650.36,1551.77 L650.36,1542.77 M650.36,18.01 L650.36,27.01  '/>	<g transform="translate(646.46,1560.16) rotate(90.00)" stroke="none" fill="black" font-family="Arial" font-size="12.00"  text-anchor="start">
 		<text><tspan font-family="Arial" >104,40,40,40,2</tspan><tspan font-family="Arial" > NeuralNet::ANN&lt;std::bfloat16</tspan><tspan font-family="Arial"  font-size="9.6" dy="3.60px">t</tspan><tspan font-family="Arial"  font-size="12.0" dy="-3.60px">></tspan></text>
 	</g>
 </g>
 <g fill="none" color="black" stroke="currentColor" stroke-width="1.00" stroke-linecap="butt" stroke-linejoin="miter">
-	<path stroke='black'  d='M682.33,1551.77 L682.33,1542.77 M682.33,18.01 L682.33,27.01  '/>	<g transform="translate(678.43,1560.16) rotate(90)" stroke="none" fill="black" font-family="Arial" font-size="12.00"  text-anchor="start">
+	<path stroke='black'  d='M682.33,1551.77 L682.33,1542.77 M682.33,18.01 L682.33,27.01  '/>	<g transform="translate(678.43,1560.16) rotate(90.00)" stroke="none" fill="black" font-family="Arial" font-size="12.00"  text-anchor="start">
 		<text><tspan font-family="Arial" >104,40,40,40,2</tspan><tspan font-family="Arial" > NeuralNet::ANN&lt;long double></tspan></text>
 	</g>
 </g>
 <g fill="none" color="black" stroke="currentColor" stroke-width="1.00" stroke-linecap="butt" stroke-linejoin="miter">
-	<path stroke='black'  d='M714.29,1551.77 L714.29,1542.77 M714.29,18.01 L714.29,27.01  '/>	<g transform="translate(710.39,1560.16) rotate(90)" stroke="none" fill="black" font-family="Arial" font-size="12.00"  text-anchor="start">
+	<path stroke='black'  d='M714.29,1551.77 L714.29,1542.77 M714.29,18.01 L714.29,27.01  '/>	<g transform="translate(710.39,1560.16) rotate(90.00)" stroke="none" fill="black" font-family="Arial" font-size="12.00"  text-anchor="start">
 		<text><tspan font-family="Arial" >104,40,40,40,2</tspan><tspan font-family="Arial" > useBatch=25 ann</tspan></text>
 	</g>
 </g>
 <g fill="none" color="black" stroke="currentColor" stroke-width="1.00" stroke-linecap="butt" stroke-linejoin="miter">
-	<path stroke='black'  d='M746.26,1551.77 L746.26,1542.77 M746.26,18.01 L746.26,27.01  '/>	<g transform="translate(742.36,1560.16) rotate(90)" stroke="none" fill="black" font-family="Arial" font-size="12.00"  text-anchor="start">
+	<path stroke='black'  d='M746.26,1551.77 L746.26,1542.77 M746.26,18.01 L746.26,27.01  '/>	<g transform="translate(742.36,1560.16) rotate(90.00)" stroke="none" fill="black" font-family="Arial" font-size="12.00"  text-anchor="start">
 		<text><tspan font-family="Arial" >104,40,40,40,2</tspan><tspan font-family="Arial" > useBatch=25 ann-ffi[float]</tspan></text>
 	</g>
 </g>
 <g fill="none" color="black" stroke="currentColor" stroke-width="1.00" stroke-linecap="butt" stroke-linejoin="miter">
-	<path stroke='black'  d='M778.23,1551.77 L778.23,1542.77 M778.23,18.01 L778.23,27.01  '/>	<g transform="translate(774.33,1560.16) rotate(90)" stroke="none" fill="black" font-family="Arial" font-size="12.00"  text-anchor="start">
+	<path stroke='black'  d='M778.23,1551.77 L778.23,1542.77 M778.23,18.01 L778.23,27.01  '/>	<g transform="translate(774.33,1560.16) rotate(90.00)" stroke="none" fill="black" font-family="Arial" font-size="12.00"  text-anchor="start">
 		<text><tspan font-family="Arial" >104,40,40,40,2</tspan><tspan font-family="Arial" > useBatch=25 ann-ffi[double]</tspan></text>
 	</g>
 </g>
 <g fill="none" color="black" stroke="currentColor" stroke-width="1.00" stroke-linecap="butt" stroke-linejoin="miter">
-	<path stroke='black'  d='M810.20,1551.77 L810.20,1542.77 M810.20,18.01 L810.20,27.01  '/>	<g transform="translate(806.30,1560.16) rotate(90)" stroke="none" fill="black" font-family="Arial" font-size="12.00"  text-anchor="start">
+	<path stroke='black'  d='M810.20,1551.77 L810.20,1542.77 M810.20,18.01 L810.20,27.01  '/>	<g transform="translate(806.30,1560.16) rotate(90.00)" stroke="none" fill="black" font-family="Arial" font-size="12.00"  text-anchor="start">
 		<text><tspan font-family="Arial" >104,40,40,40,2</tspan><tspan font-family="Arial" > useBatch=25 NeuralNet::ANN&lt;float></tspan></text>
 	</g>
 </g>
 <g fill="none" color="black" stroke="currentColor" stroke-width="1.00" stroke-linecap="butt" stroke-linejoin="miter">
-	<path stroke='black'  d='M842.17,1551.77 L842.17,1542.77 M842.17,18.01 L842.17,27.01  '/>	<g transform="translate(838.27,1560.16) rotate(90)" stroke="none" fill="black" font-family="Arial" font-size="12.00"  text-anchor="start">
+	<path stroke='black'  d='M842.17,1551.77 L842.17,1542.77 M842.17,18.01 L842.17,27.01  '/>	<g transform="translate(838.27,1560.16) rotate(90.00)" stroke="none" fill="black" font-family="Arial" font-size="12.00"  text-anchor="start">
 		<text><tspan font-family="Arial" >104,40,40,40,2</tspan><tspan font-family="Arial" > useBatch=25 NeuralNet::ANN&lt;double></tspan></text>
 	</g>
 </g>
 <g fill="none" color="black" stroke="currentColor" stroke-width="1.00" stroke-linecap="butt" stroke-linejoin="miter">
-	<path stroke='black'  d='M874.14,1551.77 L874.14,1542.77 M874.14,18.01 L874.14,27.01  '/>	<g transform="translate(870.24,1560.16) rotate(90)" stroke="none" fill="black" font-family="Arial" font-size="12.00"  text-anchor="start">
+	<path stroke='black'  d='M874.14,1551.77 L874.14,1542.77 M874.14,18.01 L874.14,27.01  '/>	<g transform="translate(870.24,1560.16) rotate(90.00)" stroke="none" fill="black" font-family="Arial" font-size="12.00"  text-anchor="start">
 		<text><tspan font-family="Arial" >104,40,40,40,2</tspan><tspan font-family="Arial" > useBatch=25 NeuralNet::ANN&lt;std::float32</tspan><tspan font-family="Arial"  font-size="9.6" dy="3.60px">t</tspan><tspan font-family="Arial"  font-size="12.0" dy="-3.60px">></tspan></text>
 	</g>
 </g>
 <g fill="none" color="black" stroke="currentColor" stroke-width="1.00" stroke-linecap="butt" stroke-linejoin="miter">
-	<path stroke='black'  d='M906.11,1551.77 L906.11,1542.77 M906.11,18.01 L906.11,27.01  '/>	<g transform="translate(902.21,1560.16) rotate(90)" stroke="none" fill="black" font-family="Arial" font-size="12.00"  text-anchor="start">
+	<path stroke='black'  d='M906.11,1551.77 L906.11,1542.77 M906.11,18.01 L906.11,27.01  '/>	<g transform="translate(902.21,1560.16) rotate(90.00)" stroke="none" fill="black" font-family="Arial" font-size="12.00"  text-anchor="start">
 		<text><tspan font-family="Arial" >104,40,40,40,2</tspan><tspan font-family="Arial" > useBatch=25 NeuralNet::ANN&lt;std::float64</tspan><tspan font-family="Arial"  font-size="9.6" dy="3.60px">t</tspan><tspan font-family="Arial"  font-size="12.0" dy="-3.60px">></tspan></text>
 	</g>
 </g>
 <g fill="none" color="black" stroke="currentColor" stroke-width="1.00" stroke-linecap="butt" stroke-linejoin="miter">
-	<path stroke='black'  d='M938.08,1551.77 L938.08,1542.77 M938.08,18.01 L938.08,27.01  '/>	<g transform="translate(934.18,1560.16) rotate(90)" stroke="none" fill="black" font-family="Arial" font-size="12.00"  text-anchor="start">
+	<path stroke='black'  d='M938.08,1551.77 L938.08,1542.77 M938.08,18.01 L938.08,27.01  '/>	<g transform="translate(934.18,1560.16) rotate(90.00)" stroke="none" fill="black" font-family="Arial" font-size="12.00"  text-anchor="start">
 		<text><tspan font-family="Arial" >104,40,40,40,2</tspan><tspan font-family="Arial" > useBatch=25 NeuralNet::ANN&lt;std::float16</tspan><tspan font-family="Arial"  font-size="9.6" dy="3.60px">t</tspan><tspan font-family="Arial"  font-size="12.0" dy="-3.60px">></tspan></text>
 	</g>
 </g>
 <g fill="none" color="black" stroke="currentColor" stroke-width="1.00" stroke-linecap="butt" stroke-linejoin="miter">
-	<path stroke='black'  d='M970.05,1551.77 L970.05,1542.77 M970.05,18.01 L970.05,27.01  '/>	<g transform="translate(966.15,1560.16) rotate(90)" stroke="none" fill="black" font-family="Arial" font-size="12.00"  text-anchor="start">
+	<path stroke='black'  d='M970.05,1551.77 L970.05,1542.77 M970.05,18.01 L970.05,27.01  '/>	<g transform="translate(966.15,1560.16) rotate(90.00)" stroke="none" fill="black" font-family="Arial" font-size="12.00"  text-anchor="start">
 		<text><tspan font-family="Arial" >104,40,40,40,2</tspan><tspan font-family="Arial" > useBatch=25 NeuralNet::ANN&lt;std::bfloat16</tspan><tspan font-family="Arial"  font-size="9.6" dy="3.60px">t</tspan><tspan font-family="Arial"  font-size="12.0" dy="-3.60px">></tspan></text>
 	</g>
 </g>

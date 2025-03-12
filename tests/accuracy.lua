@@ -53,18 +53,21 @@ local cols = table{
 }
 local reports = table()
 
-for _,info in ipairs{
+for _,info in ipairs(table{
 	{name='neuralnet.ann', ctor=ANN},
 	{name='neuralnet.ann-ffi', ctor=ANNFFI},
 	makeCpp'NeuralNet::ANN<float>',
 	makeCpp'NeuralNet::ANN<double>',
-	makeCpp'NeuralNet::ANN<std::float32_t>',
-	makeCpp'NeuralNet::ANN<std::float64_t>',
-	makeCpp'NeuralNet::ANN<std::float16_t>',
-	makeCpp'NeuralNet::ANN<std::bfloat16_t>',
-	--makeCpp'NeuralNet::ANN<long double>',	-- segfaults ...
-	--makeCpp'NeuralNet::ANN<std::float128_t>',	-- segfaults ...
-} do
+}:append(
+	require 'ffi'.os == 'OSX' and {} or {	-- these don't work in OSX ...
+		makeCpp'NeuralNet::ANN<std::float32_t>',
+		makeCpp'NeuralNet::ANN<std::float64_t>',
+		makeCpp'NeuralNet::ANN<std::float16_t>',
+		makeCpp'NeuralNet::ANN<std::bfloat16_t>',
+		--makeCpp'NeuralNet::ANN<long double>',	-- segfaults ...
+		--makeCpp'NeuralNet::ANN<std::float128_t>',	-- segfaults ...
+	}
+)) do
 	local i = 0
 	local function src()
 		i = i + 1
@@ -78,7 +81,7 @@ for _,info in ipairs{
 	nn:setActivationDeriv'one'
 	for k,w in ipairs(nn.w) do
 		--local height, width = w:size():unpack()
-		-- for cpp compat 
+		-- for cpp compat
 		local height = #w
 		local width = #w[1]
 		for i=1,height do
@@ -90,9 +93,9 @@ for _,info in ipairs{
 	for i=1,#nn.input do
 		nn.input[i] = src()
 	end
-	
+
 	nn:feedForward()
-	
+
 	nn.desired[1] = src()
 	nn.desired[2] = src()
 	local totalError = nn:calcError()

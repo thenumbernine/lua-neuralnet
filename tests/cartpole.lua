@@ -304,45 +304,40 @@ function Cart:step()
 	if self.iteration >= self.maxIterations then
 		self:reset()
 	else
-		self.iteration = self.iteration + 1
-		local action = self.controller:getAction(self.x, self.dx_dt, self.theta, self.dtheta_dt, .001)
+		-- did we fail?
+		local failed = self.theta < -math.rad(12) or self.theta > math.rad(12) 
+		or self.x < -2.4 or self.x > 2.4
 
-		local failed = self:simulate(action)
-
+		local action = self.controller:getAction(self.x, self.dx_dt, self.theta, self.dtheta_dt, failed and -1 or .001)
 		if failed then
 			print(self.iteration)
-			io.stdout:flush()
-			-- reinforce
-			self.controller:getAction(self.x, self.dx_dt, self.theta, self.dtheta_dt, -1)
 			self:reset()
+		else
+			self.iteration = self.iteration + 1
+
+			-- step / performAction
+			local gravity = 9.8
+			local massCart = 1
+			local massPole = .1
+			local totalMass = massPole + massCart
+			local length = .5
+			local poleMassLength = massPole * length
+			local forceMag = 20
+			local dt = .02
+
+			local force = ({-forceMag, 0, forceMag})[action]
+			local cosTheta = math.cos(self.theta)
+			local sinTheta = math.sin(self.theta)
+			local temp = (force + poleMassLength * self.dtheta_dt * self.dtheta_dt * sinTheta) / totalMass
+			local d2theta_dt2 = (gravity * sinTheta - cosTheta * temp) / (length * (4./3. - massPole * cosTheta * cosTheta / totalMass))
+			local d2x_dt2 = temp - poleMassLength * d2theta_dt2 * cosTheta / totalMass
+
+			self.x = self.x + dt * self.dx_dt
+			self.theta = self.theta + dt * self.dtheta_dt
+			self.dx_dt = self.dx_dt + dt * d2x_dt2
+			self.dtheta_dt = self.dtheta_dt + dt * d2theta_dt2
 		end
 	end
-end
-function Cart:simulate(action)
-	local gravity = 9.8
-	local massCart = 1
-	local massPole = .1
-	local totalMass = massPole + massCart
-	local length = .5
-	local poleMassLength = massPole * length
-	local forceMag = 20
-	local dt = .02
-
-	local force = ({-forceMag, 0, forceMag})[action]
-	local cosTheta = math.cos(self.theta)
-	local sinTheta = math.sin(self.theta)
-	local temp = (force + poleMassLength * self.dtheta_dt * self.dtheta_dt * sinTheta) / totalMass
-	local d2theta_dt2 = (gravity * sinTheta - cosTheta * temp) / (length * (4./3. - massPole * cosTheta * cosTheta / totalMass))
-	local d2x_dt2 = temp - poleMassLength * d2theta_dt2 * cosTheta / totalMass
-
-	self.x = self.x + dt * self.dx_dt
-	self.theta = self.theta + dt * self.dtheta_dt
-	self.dx_dt = self.dx_dt + dt * d2x_dt2
-	self.dtheta_dt = self.dtheta_dt + dt * d2theta_dt2
-
-	-- fail?
-	if self.theta < -math.rad(12) or self.theta > math.rad(12) then return true end
-	if self.x < -2.4 or self.x > 2.4 then return true end
 end
 local cart = Cart()
 

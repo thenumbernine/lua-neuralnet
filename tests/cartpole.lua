@@ -15,7 +15,7 @@ math.randomseed(os.time())
 --[[
 state description
 used for generating the neural network
-and used for providing input state object 
+and used for providing input state object
 --]]
 local StateDescription = class()
 
@@ -49,7 +49,7 @@ function DiscreteStateDescription:createNeuralNetwork(...)
 end
 
 --[[
-	returns 0 for x < min 
+	returns 0 for x < min
 	returns n-1 for x > max
 	returns even divisions for x from min to max
 --]]
@@ -64,16 +64,16 @@ DiscreteStateDescription.dxdtBins = 3
 DiscreteStateDescription.thetaBins = 6
 DiscreteStateDescription.dthetadtBins = 3
 
-DiscreteStateDescription.numStates = 
-	DiscreteStateDescription.xBins * 
-	DiscreteStateDescription.dxdtBins * 
-	DiscreteStateDescription.thetaBins * 
+DiscreteStateDescription.numStates =
+	DiscreteStateDescription.xBins *
+	DiscreteStateDescription.dxdtBins *
+	DiscreteStateDescription.thetaBins *
 	DiscreteStateDescription.dthetadtBins
 
 DiscreteStateDescription.numActions = 3
 
 function DiscreteStateDescription:getState(x, dx_dt, theta, dtheta_dt)
-	if x < -2.4 or x > 2.4 
+	if x < -2.4 or x > 2.4
 	or theta < -math.rad(12)
 	or theta > math.rad(12)
 	then
@@ -86,7 +86,7 @@ function DiscreteStateDescription:getState(x, dx_dt, theta, dtheta_dt)
 	-- theta is nonlinear...
 	assert(self.thetaBins == 6)
 	local thetaIndex
-	if theta < -math.deg(6) then 
+	if theta < -math.deg(6) then
 		thetaIndex = 0
 	elseif theta < -math.deg(1) then
 		thetaIndex = 1
@@ -102,7 +102,7 @@ function DiscreteStateDescription:getState(x, dx_dt, theta, dtheta_dt)
 
 	local dthetadtIndex = self:bin(dtheta_dt, -math.rad(50), math.rad(50), self.dthetadtBins)
 
-	return 
+	return
 		xIndex + self.xBins * (
 		dxdtIndex + self.dxdtBins * (
 		thetaIndex + self.thetaBins * (
@@ -118,14 +118,14 @@ ContinuousStateDescription.numStates = 4
 
 function ContinuousStateDescription:createNeuralNetwork(...)
 	local desc = self
-	
+
 	local rlnn = ContinuousStateDescription.super.createNeuralNetwork(self, ...)
 	rlnn.gamma = .99	-- q-learning gamma
 	rlnn.alpha = 1		-- weight update amount
 	rlnn.lambda = .99	-- history influence
-	rlnn.noise = 0		-- noise within the choosing process.  TODO this should be noise of whether to choose the greedy or a random action 
+	rlnn.noise = 0		-- noise within the choosing process.  TODO this should be noise of whether to choose the greedy or a random action
 	rlnn.historySize = 100
-	
+
 	-- set signal to sigmoid
 	--rlnn.activation = function(x) return 1 / (1 + math.exp(-x)) end
 	--rlnn.activationDeriv = function(x,y) return y * (1 - y) end
@@ -140,7 +140,7 @@ function ContinuousStateDescription:createNeuralNetwork(...)
 		if x < 0 or x > 1 then return oobslope end
 		return 1
 	end)
-	
+
 	-- set input to be signals of state + last output (last action)
 	rlnn.feedForwardForState = function(self, state)
 		assert(#state == desc.numStates)
@@ -156,7 +156,7 @@ function ContinuousStateDescription:createNeuralNetwork(...)
 			end
 		else
 			for i=1,desc.numActions do
-				self.nn.input[i+#state] = 0 
+				self.nn.input[i+#state] = 0
 			end
 		end
 		self.nn:feedForward()
@@ -174,17 +174,17 @@ function ContinuousStateDescription:getState(x, dx_dt, theta, dtheta_dt)
 	local function powRamp(x, range)
 		return math.clamp(math.sign(x) * math.sqrt(math.abs(x / range)) * .5 + .5, 0, 1)
 	end
-	
+
 	return {
-		ramp(x, -2.4, 2.4), 
-		ramp(dx_dt, -.5, .5), 
+		ramp(x, -2.4, 2.4),
+		ramp(dx_dt, -.5, .5),
 		powRamp(theta, math.rad(6)),	-- bias in the middle:  -6,-1,0,1,6.  use power * sign
 		ramp(dtheta_dt, -math.rad(50), math.rad(50))
 	}
 end
 
 
--- init based on whether we want discrete/continuous state representation 
+-- init based on whether we want discrete/continuous state representation
 local neuralNetworkMethod = 'singleLayerDiscreteState'
 --local neuralNetworkMethod = 'multiLayerDiscreteState'
 --local neuralNetworkMethod = 'multiLayerContinuousState'
@@ -194,12 +194,12 @@ local createNeuralNetwork = ({
 	-- typical q-learning.  no activation function, no hidden layer
 	-- discretize all possible states, the 'state' variable is the nn input is a spike at the current discrete state index
 	singleLayerDiscreteState = function()
-		
+
 		local desc = DiscreteStateDescription()
 		getState = function(...)
 			return desc:getState(...)
 		end
-		
+
 		return desc:createNeuralNetwork(
 			desc.numStates,
 			desc.numActions)
@@ -208,14 +208,14 @@ local createNeuralNetwork = ({
 	-- keeping the same discrete input system
 	--  adding a middle layer just to make sure that the middle layer will still work
 	multiLayerDiscreteState = function()
-		
+
 		local desc = DiscreteStateDescription()
 		getState = function(...)
 			return desc:getState(...)
 		end
-		
+
 		local rlnn = desc:createNeuralNetwork(desc.numStates, desc.numStates, desc.numActions)
-		
+
 		-- [[ without initializing it to identity (which makes it redundant) there seems to be a lot of noise ...
 		for i=1,#rlnn.nn.w[2] do
 			for j=1,#rlnn.nn.w[2][i] do
@@ -231,7 +231,7 @@ local createNeuralNetwork = ({
 	-- my attempt at q-learning neural networks
 	-- not going so well
 	multiLayerContinuousState = function()
-		
+
 		local desc = ContinuousStateDescription()
 		getState = function(...)
 			return desc:getState(...)
@@ -254,42 +254,15 @@ local createNeuralNetwork = ({
 			end
 		end
 
-		return rlnn	
-	end,	
+		return rlnn
+	end,
 })[neuralNetworkMethod]
 
-local CartController = class()
-function CartController:init()
-	self.qnn = createNeuralNetwork()
-	self:reset()
-end
-function CartController:reset()
-	self.firstMove = true
-	self.qnn.lastAction = nil
-end
-
-function CartController:getAction(x, dx_dt, theta, dtheta_dt, reward)
-	-- calculate state based on cart parameters
-	--  to be used for reinforcement and for determining next action
-	local state = getState(x, dx_dt, theta, dtheta_dt)
-
-	--apply reward
-	-- don't apply rewards until we have a previous state/action on file
-	if not self.firstMove then
-		self.qnn:applyReward(state, reward)
-	end
-	self.firstMove = false
-
-	-- determine next action
-	return self.qnn:determineAction(state)
-end
-
 local Cart = class()
-Cart.cartControllerClass = CartController
 Cart.maxIterations = 100000
 Cart.maxFailures = 3000
 function Cart:init()
-	self.controller = self.cartControllerClass()
+	self.qnn = createNeuralNetwork()
 	self:reset()
 end
 function Cart:reset()
@@ -298,49 +271,71 @@ function Cart:reset()
 	self.theta = (math.random() * 2 - 1) * math.rad(6)
 	self.dtheta_dt = 0
 	self.iteration = 0
-	self.controller:reset()
+end
+function Cart:performAction(state)
+	-- determine next action.
+	-- this also saves it as 'lastAction' and its Q-value as 'lastStateActionQ' for the next 'applyReward'
+	local action, actionQ = self.qnn:determineAction(state)
+
+	-- step / performAction
+	local gravity = 9.8
+	local massCart = 1
+	local massPole = .1
+	local totalMass = massPole + massCart
+	local length = .5
+	local poleMassLength = massPole * length
+	local forceMag = 20
+	local dt = .02
+
+	local force = ({-forceMag, 0, forceMag})[action]
+	local cosTheta = math.cos(self.theta)
+	local sinTheta = math.sin(self.theta)
+	local temp = (force + poleMassLength * self.dtheta_dt * self.dtheta_dt * sinTheta) / totalMass
+	local d2theta_dt2 = (gravity * sinTheta - cosTheta * temp) / (length * (4./3. - massPole * cosTheta * cosTheta / totalMass))
+	local d2x_dt2 = temp - poleMassLength * d2theta_dt2 * cosTheta / totalMass
+
+	self.x = self.x + dt * self.dx_dt
+	self.theta = self.theta + dt * self.dtheta_dt
+	self.dx_dt = self.dx_dt + dt * d2x_dt2
+	self.dtheta_dt = self.dtheta_dt + dt * d2theta_dt2
+
+	return action, actionQ
 end
 function Cart:step()
+	self.iteration = self.iteration + 1
 	if self.iteration >= self.maxIterations then
 		self:reset()
 	else
-		-- did we fail?
-		local failed = self.theta < -math.rad(12) or self.theta > math.rad(12) 
-		or self.x < -2.4 or self.x > 2.4
+		-- calculate state based on cart parameters
+		--  to be used for reinforcement and for determining next action
+		local state = getState(self.x, self.dx_dt, self.theta, self.dtheta_dt)
 
-		local action = self.controller:getAction(self.x, self.dx_dt, self.theta, self.dtheta_dt, failed and -1 or .001)
+		-- should this go here or only after the failed condition?
+		-- here means no need to store and test for lastAction anymore...
+		local action, actionQ = self:performAction(state)
+
+		-- determine reward and whether to reset
+		local failed = self.theta < -math.rad(12) or self.theta > math.rad(12) or self.x < -2.4 or self.x > 2.4
+		local reward = failed and -1 or .001
+
+		--apply reward
+		-- don't apply rewards until we have a previous state/action on file
+		if self.qnn.lastAction then
+			-- applies reward with qnn.lastAction as the A(S[t],*) and lastActionQ
+			self.qnn:applyReward(state, reward)
+		end
+
 		if failed then
 			print(self.iteration)
 			self:reset()
 		else
-			self.iteration = self.iteration + 1
-
-			-- step / performAction
-			local gravity = 9.8
-			local massCart = 1
-			local massPole = .1
-			local totalMass = massPole + massCart
-			local length = .5
-			local poleMassLength = massPole * length
-			local forceMag = 20
-			local dt = .02
-
-			local force = ({-forceMag, 0, forceMag})[action]
-			local cosTheta = math.cos(self.theta)
-			local sinTheta = math.sin(self.theta)
-			local temp = (force + poleMassLength * self.dtheta_dt * self.dtheta_dt * sinTheta) / totalMass
-			local d2theta_dt2 = (gravity * sinTheta - cosTheta * temp) / (length * (4./3. - massPole * cosTheta * cosTheta / totalMass))
-			local d2x_dt2 = temp - poleMassLength * d2theta_dt2 * cosTheta / totalMass
-
-			self.x = self.x + dt * self.dx_dt
-			self.theta = self.theta + dt * self.dtheta_dt
-			self.dx_dt = self.dx_dt + dt * d2x_dt2
-			self.dtheta_dt = self.dtheta_dt + dt * d2theta_dt2
+			--self:performAction(state)
 		end
 	end
 end
 local cart = Cart()
 
+--[=[ gl ... needs to be fixed
 local CartPoleGLApp = GLApp:subclass()
 CartPoleGLApp.viewUseGLMatrixMode = true
 function CartPoleGLApp:update()
@@ -377,14 +372,14 @@ function CartPoleGLApp:update()
 	gl.glTranslatef(-4, -2.5, 0)
 	gl.glScalef(.2, .2, .1)
 	gl.glBegin(gl.GL_QUADS)
-	if #cart.controller.qnn.nn.w[1][1] == 3*3*6*3+1 then
+	if #cart.qnn.nn.w[1][1] == 3*3*6*3+1 then
 		for i=0,3-1 do
 			for j=0,3-1 do
 				for k=0,6-1 do
 					for l=0,3-1 do
 						for action=1,3 do
 							local state = 1 + i + 3 * (j + 3 * (k + 6 * l))
-							gl.glColor3f(colorForQ(cart.controller.qnn.nn.w[1][action][state]))
+							gl.glColor3f(colorForQ(cart.qnn.nn.w[1][action][state]))
 							gl.glVertex2f(7*i + k + .2 * (action-1), 4*j + l)
 							gl.glVertex2f(7*i + k + .2 * (action-1 + .8), 4*j + l)
 							gl.glVertex2f(7*i + k + .2 * (action-1 + .8), 4*j + l+.9)
@@ -399,3 +394,7 @@ function CartPoleGLApp:update()
 	gl.glPopMatrix()
 end
 return CartPoleGLApp():run()
+--]=]
+-- [=[ until then
+while true do cart:step() end
+--]=]

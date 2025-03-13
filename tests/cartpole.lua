@@ -272,11 +272,7 @@ function Cart:reset()
 	self.dtheta_dt = 0
 	self.iteration = 0
 end
-function Cart:performAction(state)
-	-- determine next action.
-	-- this also saves it as 'lastAction' and its Q-value as 'lastStateActionQ' for the next 'applyReward'
-	local action, actionQ = self.qnn:determineAction(state)
-
+function Cart:performAction(state, action, actionQ)
 	-- step / performAction
 	local gravity = 9.8
 	local massCart = 1
@@ -298,7 +294,12 @@ function Cart:performAction(state)
 	self.theta = self.theta + dt * self.dtheta_dt
 	self.dx_dt = self.dx_dt + dt * d2x_dt2
 	self.dtheta_dt = self.dtheta_dt + dt * d2theta_dt2
-
+end
+function Cart:determineAndPerformAction(state)
+	-- determine next action.
+	-- this also saves it as 'lastAction' and its Q-value as 'lastStateActionQ' for the next 'applyReward'
+	local action, actionQ = self.qnn:determineAction(state)
+	self:performAction(state, action, actionQ)
 	return action, actionQ
 end
 function Cart:step()
@@ -312,7 +313,8 @@ function Cart:step()
 
 		-- should this go here or only after the failed condition?
 		-- here means no need to store and test for lastAction anymore...
-		local action, actionQ = self:performAction(state)
+		local action, actionQ = self:determineAndPerformAction(state)
+		local newState = getState(self.x, self.dx_dt, self.theta, self.dtheta_dt)
 
 		-- determine reward and whether to reset
 		local failed = self.theta < -math.rad(12) or self.theta > math.rad(12) or self.x < -2.4 or self.x > 2.4
@@ -322,14 +324,14 @@ function Cart:step()
 		-- don't apply rewards until we have a previous state/action on file
 		if self.qnn.lastAction then
 			-- applies reward with qnn.lastAction as the A(S[t],*) and lastActionQ
-			self.qnn:applyReward(state, reward)
+			self.qnn:applyReward(newState, reward)--, state, action, actionQ)
 		end
 
 		if failed then
 			print(self.iteration)
 			self:reset()
 		else
-			--self:performAction(state)
+			--self:determineAndPerformAction(state)
 		end
 	end
 end

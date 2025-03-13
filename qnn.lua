@@ -66,7 +66,7 @@ function QNN:determineAction(state)
 	return self.lastAction, self.lastStateActionQ
 end
 
-function QNN:applyReward(newState, reward)
+function QNN:applyReward(newState, reward)--, lastState, lastAction, lastStateActionQ)
 	local nextQs = self:getQs(newState)		-- Q(S[t+1], *)
 	local maxNextQ = nextQs:sup()			-- max(Q(S[t+1], *))
 

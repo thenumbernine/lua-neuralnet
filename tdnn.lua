@@ -23,11 +23,11 @@ function TDNN:determineAction(state)
 	while #self.history > self.historySize do
 		self.history:remove()
 	end
-	return self.lastAction
+	return self.lastAction, self.lastStateActionQ
 end
 
-function TDNN:applyReward(state, reward)
-	local err = TDNN.super.applyReward(self, state, reward)
+function TDNN:applyReward(state, reward, ...)
+	local err = TDNN.super.applyReward(self, state, reward, ...)
 
 	for i=2,#self.history do
 		-- damp the first -- it has already been applied in QNN:applyReward

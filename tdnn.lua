@@ -35,8 +35,8 @@ function TDNN:applyReward(state, reward)
 		
 		local history = self.history[i]
 		self:feedForwardForState(history.state)
-		for i=1,#self.nn.outputError do
-			self.nn.outputError[i] = 0
+		for j=1,#self.nn.outputError do
+			self.nn.outputError[j] = 0
 		end
 		self.nn.outputError[history.action] = err
 		self.nn:backPropagate(self.alpha)

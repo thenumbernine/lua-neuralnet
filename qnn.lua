@@ -57,26 +57,28 @@ function QNN:determineAction(state)
 	-- S[t] is our current state, represented as 'state'
 
 	-- A[t] is our action for this state.  get it by getting the Q's of our current state, permuting them sightly, and picking the highest action
-	local thisQs = self:getQs(state)					-- Q(S[t], *)
+	local thisQs = self:getQs(state)				-- Q(S[t], *)
+	local action = self:getBestAction(thisQs)		-- A[t]
+	local actionQ = thisQs[action]					-- Q(S[t], A[t])
+	
+	self.lastState = state
+	self.lastAction = action
+	self.lastStateActionQ = actionQ
 
-	self.lastState = state								-- S[t]
-	self.lastAction = self:getBestAction(thisQs)		-- A[t]
-	self.lastStateActionQ = thisQs[self.lastAction]		-- Q(S[t], A[t])
-
-	return self.lastAction, self.lastStateActionQ
+	return action, actionQ
 end
 
-function QNN:applyReward(newState, reward)--, lastState, lastAction, lastStateActionQ)
+function QNN:applyReward(newState, reward, lastState, lastAction, lastStateActionQ)
 	local nextQs = self:getQs(newState)		-- Q(S[t+1], *)
 	local maxNextQ = nextQs:sup()			-- max(Q(S[t+1], *))
 
 	-- setup input for backpropagation
-	self:feedForwardForState(self.lastState)
+	self:feedForwardForState(lastState)
 	for i=1,#self.nn.outputError do
 		self.nn.outputError[i] = 0
 	end
-	local err = reward + self.gamma * maxNextQ - self.lastStateActionQ
-	self.nn.outputError[self.lastAction] = err
+	local err = reward + self.gamma * maxNextQ - lastStateActionQ
+	self.nn.outputError[lastAction] = err
 	self.nn:backPropagate(self.alpha)
 
 	return err

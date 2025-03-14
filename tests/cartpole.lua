@@ -196,8 +196,8 @@ local createNeuralNetwork = ({
 	singleLayerDiscreteState = function()
 
 		local desc = DiscreteStateDescription()
-		getState = function(...)
-			return desc:getState(...)
+		getState = function(cart)
+			return desc:getState(cart.x, cart.dx_dt, cart.theta, cart.dtheta_dt)
 		end
 
 		return desc:createNeuralNetwork(
@@ -210,8 +210,8 @@ local createNeuralNetwork = ({
 	multiLayerDiscreteState = function()
 
 		local desc = DiscreteStateDescription()
-		getState = function(...)
-			return desc:getState(...)
+		getState = function(cart)
+			return desc:getState(cart.x, cart.dx_dt, cart.theta, cart.dtheta_dt)
 		end
 
 		local rlnn = desc:createNeuralNetwork(desc.numStates, desc.numStates, desc.numActions)
@@ -233,8 +233,8 @@ local createNeuralNetwork = ({
 	multiLayerContinuousState = function()
 
 		local desc = ContinuousStateDescription()
-		getState = function(...)
-			return desc:getState(...)
+		getState = function(cart)
+			return desc:getState(cart.x, cart.dx_dt, cart.theta, cart.dtheta_dt)
 		end
 
 		local rlnn = desc:createNeuralNetwork(
@@ -263,6 +263,7 @@ Cart.maxIterations = 100000
 Cart.maxFailures = 3000
 function Cart:init()
 	self.qnn = createNeuralNetwork()
+	Cart.getState = getState
 	self:reset()
 end
 function Cart:reset()
@@ -295,44 +296,45 @@ function Cart:performAction(state, action, actionQ)
 	self.dx_dt = self.dx_dt + dt * d2x_dt2
 	self.dtheta_dt = self.dtheta_dt + dt * d2theta_dt2
 end
-function Cart:determineAndPerformAction(state)
-	-- determine next action.
-	-- this also saves it as 'lastAction' and its Q-value as 'lastStateActionQ' for the next 'applyReward'
-	local action, actionQ = self.qnn:determineAction(state)
-	self:performAction(state, action, actionQ)
-	return action, actionQ
+function Cart:getReward()
+	local toppled = self.theta < -math.rad(12) or self.theta > math.rad(12) or self.x < -2.4 or self.x > 2.4
+	local succeeded = self.iteration >= self.maxIterations
+	return toppled and -1 or .001, toppled or succeeded
 end
 function Cart:step()
-	self.iteration = self.iteration + 1
-	if self.iteration >= self.maxIterations then
+	self.iteration = self.iteration + 1	-- should this be a state variable?
+
+	-- calculate state based on cart parameters
+	--  to be used for reinforcement and for determining next action
+	-- ok 'self' really is the state
+	-- while 'state' is the underlying neural network's representation of the state
+	local state = self:getState()
+
+	-- determine next action.
+	-- this also saves it as 'lastAction' and its Q-value as 'lastStateActionQ' for the next 'applyReward'
+	-- should this go here or only after the failed condition?
+	-- here means no need to store and test for lastAction anymore...
+	local action, actionQ = self.qnn:determineAction(state)
+	
+	self:performAction(state, action, actionQ)
+	local newState = self:getState()
+
+	-- determine reward and whether to reset
+	local reward, reset = self:getReward()
+
+	--apply reward
+	-- don't apply rewards until we have a previous state/action on file
+	if self.qnn.lastAction then
+		-- applies reward with qnn.lastAction as the A(S[t],*) and lastActionQ
+		self.qnn:applyReward(newState, reward, state, action, actionQ)
+	end
+
+	if reset then
+		print(self.iteration)
 		self:reset()
 	else
-		-- calculate state based on cart parameters
-		--  to be used for reinforcement and for determining next action
-		local state = getState(self.x, self.dx_dt, self.theta, self.dtheta_dt)
-
-		-- should this go here or only after the failed condition?
-		-- here means no need to store and test for lastAction anymore...
-		local action, actionQ = self:determineAndPerformAction(state)
-		local newState = getState(self.x, self.dx_dt, self.theta, self.dtheta_dt)
-
-		-- determine reward and whether to reset
-		local failed = self.theta < -math.rad(12) or self.theta > math.rad(12) or self.x < -2.4 or self.x > 2.4
-		local reward = failed and -1 or .001
-
-		--apply reward
-		-- don't apply rewards until we have a previous state/action on file
-		if self.qnn.lastAction then
-			-- applies reward with qnn.lastAction as the A(S[t],*) and lastActionQ
-			self.qnn:applyReward(newState, reward)--, state, action, actionQ)
-		end
-
-		if failed then
-			print(self.iteration)
-			self:reset()
-		else
-			--self:determineAndPerformAction(state)
-		end
+		--local action, actionQ = self.qnn:determineAction(state)
+		--self:performAction(state, action, actionQ)
 	end
 end
 local cart = Cart()

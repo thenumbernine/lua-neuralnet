@@ -13,17 +13,17 @@ function TDNN:init(...)
 end
 
 function TDNN:determineAction(state)
-	TDNN.super.determineAction(self, state)
+	local action, actionQ = TDNN.super.determineAction(self, state)
 	-- insert at the beginning
 	self.history:insert(1, {
-		state=self.lastState,
-		action=self.lastAction,
+		state=state,
+		action=action,
 	})
 	-- remove from end
 	while #self.history > self.historySize do
 		self.history:remove()
 	end
-	return self.lastAction, self.lastStateActionQ
+	return action, actionQ
 end
 
 function TDNN:applyReward(state, reward, ...)

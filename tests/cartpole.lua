@@ -267,6 +267,7 @@ function Cart:init()
 	self:reset()
 end
 function Cart:reset()
+	if self.iteration then print(self.iteration) end
 	self.x = 0
 	self.dx_dt = 0
 	self.theta = (math.random() * 2 - 1) * math.rad(6)
@@ -303,39 +304,7 @@ function Cart:getReward()
 end
 function Cart:step()
 	self.iteration = self.iteration + 1	-- should this be a state variable?
-
-	-- calculate state based on cart parameters
-	--  to be used for reinforcement and for determining next action
-	-- ok 'self' really is the state
-	-- while 'state' is the underlying neural network's representation of the state
-	local state = self:getState()
-
-	-- determine next action.
-	-- this also saves it as 'lastAction' and its Q-value as 'lastStateActionQ' for the next 'applyReward'
-	-- should this go here or only after the failed condition?
-	-- here means no need to store and test for lastAction anymore...
-	local action, actionQ = self.qnn:determineAction(state)
-	
-	self:performAction(state, action, actionQ)
-	local newState = self:getState()
-
-	-- determine reward and whether to reset
-	local reward, reset = self:getReward()
-
-	--apply reward
-	-- don't apply rewards until we have a previous state/action on file
-	if self.qnn.lastAction then
-		-- applies reward with qnn.lastAction as the A(S[t],*) and lastActionQ
-		self.qnn:applyReward(newState, reward, state, action, actionQ)
-	end
-
-	if reset then
-		print(self.iteration)
-		self:reset()
-	else
-		--local action, actionQ = self.qnn:determineAction(state)
-		--self:performAction(state, action, actionQ)
-	end
+	self.qnn:step(self)
 end
 local cart = Cart()
 

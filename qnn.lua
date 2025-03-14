@@ -60,7 +60,7 @@ function QNN:determineAction(state)
 	local thisQs = self:getQs(state)				-- Q(S[t], *)
 	local action = self:getBestAction(thisQs)		-- A[t]
 	local actionQ = thisQs[action]					-- Q(S[t], A[t])
-	
+
 	self.lastState = state
 	self.lastAction = action
 	self.lastStateActionQ = actionQ
@@ -82,6 +82,43 @@ function QNN:applyReward(newState, reward, lastState, lastAction, lastStateActio
 	self.nn:backPropagate(self.alpha)
 
 	return err
+end
+
+--[[
+controller provides:
+	:getState()
+	:performAction()
+	:getReward()
+	:reset()
+--]]
+function QNN:step(controller)
+	-- calculate state based on cart parameters
+	--  to be used for reinforcement and for determining next action
+	-- ok 'self' really is the state
+	-- while 'state' is the underlying neural network's representation of the state
+	local state = controller:getState()
+
+	-- determine next action.
+	-- this also saves it as 'lastAction' and its Q-value as 'lastStateActionQ' for the next 'applyReward'
+	-- should this go here or only after the failed condition?
+	-- here means no need to store and test for lastAction anymore...
+	local action, actionQ = self:determineAction(state)
+
+	controller:performAction(state, action, actionQ)
+	local newState = controller:getState()
+
+	-- determine reward and whether to reset
+	local reward, reset = controller:getReward()
+
+	--apply reward
+	-- applies reward with qnn.lastAction as the A(S[t],*) and lastActionQ
+	self:applyReward(newState, reward, state, action, actionQ)
+
+	if reset then
+		controller:reset()
+	end
+
+	return reward, reset
 end
 
 function QNN:__tostring()

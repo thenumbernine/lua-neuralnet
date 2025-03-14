@@ -32,7 +32,7 @@ function TDNN:applyReward(state, reward, ...)
 	for i=2,#self.history do
 		-- damp the first -- it has already been applied in QNN:applyReward
 		err = err * self.lambda
-		
+
 		local history = self.history[i]
 		self:feedForwardForState(history.state)
 		for j=1,#self.nn.outputError do

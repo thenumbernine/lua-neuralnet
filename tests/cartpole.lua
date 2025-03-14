@@ -53,7 +53,7 @@ end
 	returns n-1 for x > max
 	returns even divisions for x from min to max
 --]]
-function DiscreteStateDescription:bin(x, min, max, n)
+function bin(x, min, max, n)
 	return math.clamp(
 		math.floor((x - min) / (max - min) * (n - 2)),
 		-1, n-2) + 1
@@ -80,8 +80,8 @@ function DiscreteStateDescription:getState(x, dt_x, theta, dt_theta)
 		return 0	-- invalid state means we've failed
 	end
 
-	local xIndex = self:bin(x, -.8, .8, self.xBins)
-	local dxdtIndex = self:bin(dt_x, -.5, .5, self.dtxBins)
+	local xIndex = bin(x, -.8, .8, self.xBins)
+	local dxdtIndex = bin(dt_x, -.5, .5, self.dtxBins)
 
 	-- theta is nonlinear...
 	assert(self.thetaBins == 6)
@@ -100,7 +100,7 @@ function DiscreteStateDescription:getState(x, dt_x, theta, dt_theta)
 		thetaIndex = 5
 	end
 
-	local dthetadtIndex = self:bin(dt_theta, -math.rad(50), math.rad(50), self.dtthetaBins)
+	local dthetadtIndex = bin(dt_theta, -math.rad(50), math.rad(50), self.dtthetaBins)
 
 	return
 		xIndex + self.xBins * (

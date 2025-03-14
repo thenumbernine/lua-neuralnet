@@ -303,7 +303,7 @@ function Cart:getReward()
 	return toppled and -1 or .001, toppled or succeeded
 end
 function Cart:step()
-	self.iteration = self.iteration + 1	-- should this be a state variable?
+	self.iteration = self.iteration + 1
 	self.qnn:step(self)
 end
 local cart = Cart()

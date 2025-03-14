@@ -110,6 +110,7 @@ function QNN:step(controller)
 	self:applyReward(newState, reward, state, action, actionQ)
 
 	if reset then
+		self.history = table()
 		controller:reset()
 	end
 

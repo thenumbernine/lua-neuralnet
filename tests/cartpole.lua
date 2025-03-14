@@ -39,6 +39,8 @@ local DiscreteStateDescription = StateDescription:subclass()
 
 function DiscreteStateDescription:createNeuralNetwork(...)
 	local rlnn = DiscreteStateDescription.super.createNeuralNetwork(self, ...)
+	--rlnn.historySize = 100
+	rlnn.noise = 1e-5
 	rlnn.nn:setActivation'identity'
 	rlnn.nn:setActivationDeriv'one'
 	for k=1,#rlnn.nn.w do
@@ -286,7 +288,7 @@ function Cart:performAction(action, actionQ, state)	-- 'action' is really all we
 	local dt = .02
 
 	local force = 0
-	if action == 1 then
+	if action == 2 then
 		force = -forceMag
 	elseif action == 3 then
 		force = forceMag

@@ -40,7 +40,7 @@ local DiscreteStateDescription = StateDescription:subclass()
 function DiscreteStateDescription:createNeuralNetwork(...)
 	local rlnn = DiscreteStateDescription.super.createNeuralNetwork(self, ...)
 	--rlnn.historySize = 100
-	rlnn.noise = 1e-5
+	rlnn.noise = 0 --1e-5	-- tempting to set this for initial gains, but in the long run it always hinders things
 	rlnn.nn:setActivation'identity'
 	rlnn.nn:setActivationDeriv'one'
 	for k=1,#rlnn.nn.w do

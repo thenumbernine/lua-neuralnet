@@ -12,8 +12,8 @@ function TDNN:init(...)
 	self.history = table()
 end
 
-function TDNN:determineAction(state)
-	local action, actionQ = TDNN.super.determineAction(self, state)
+function TDNN:determineAction(state, ...)
+	local action, actionQ = TDNN.super.determineAction(self, state, ...)
 	-- insert at the beginning
 	self.history:insert(1, {
 		state=state,

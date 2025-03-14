@@ -60,19 +60,19 @@ function DiscreteStateDescription:bin(x, min, max, n)
 end
 
 DiscreteStateDescription.xBins = 3
-DiscreteStateDescription.dxdtBins = 3
+DiscreteStateDescription.dtxBins = 3
 DiscreteStateDescription.thetaBins = 6
-DiscreteStateDescription.dthetadtBins = 3
+DiscreteStateDescription.dtthetaBins = 3
 
 DiscreteStateDescription.numStates =
 	DiscreteStateDescription.xBins *
-	DiscreteStateDescription.dxdtBins *
+	DiscreteStateDescription.dtxBins *
 	DiscreteStateDescription.thetaBins *
-	DiscreteStateDescription.dthetadtBins
+	DiscreteStateDescription.dtthetaBins
 
 DiscreteStateDescription.numActions = 3
 
-function DiscreteStateDescription:getState(x, dx_dt, theta, dtheta_dt)
+function DiscreteStateDescription:getState(x, dt_x, theta, dt_theta)
 	if x < -2.4 or x > 2.4
 	or theta < -math.rad(12)
 	or theta > math.rad(12)
@@ -81,7 +81,7 @@ function DiscreteStateDescription:getState(x, dx_dt, theta, dtheta_dt)
 	end
 
 	local xIndex = self:bin(x, -.8, .8, self.xBins)
-	local dxdtIndex = self:bin(dx_dt, -.5, .5, self.dxdtBins)
+	local dxdtIndex = self:bin(dt_x, -.5, .5, self.dtxBins)
 
 	-- theta is nonlinear...
 	assert(self.thetaBins == 6)
@@ -100,11 +100,11 @@ function DiscreteStateDescription:getState(x, dx_dt, theta, dtheta_dt)
 		thetaIndex = 5
 	end
 
-	local dthetadtIndex = self:bin(dtheta_dt, -math.rad(50), math.rad(50), self.dthetadtBins)
+	local dthetadtIndex = self:bin(dt_theta, -math.rad(50), math.rad(50), self.dtthetaBins)
 
 	return
 		xIndex + self.xBins * (
-		dxdtIndex + self.dxdtBins * (
+		dxdtIndex + self.dtxBins * (
 		thetaIndex + self.thetaBins * (
 		dthetadtIndex)))
 		+ 1 	-- +1 for lua
@@ -164,7 +164,7 @@ function ContinuousStateDescription:createNeuralNetwork(...)
 	return rlnn
 end
 
-function ContinuousStateDescription:getState(x, dx_dt, theta, dtheta_dt)
+function ContinuousStateDescription:getState(x, dt_x, theta, dt_theta)
 	-- maps input signals to 0,1 range
 	local function ramp(x, min, max)
 		return math.clamp((x - min) / (max - min), 0, 1)
@@ -177,9 +177,9 @@ function ContinuousStateDescription:getState(x, dx_dt, theta, dtheta_dt)
 
 	return {
 		ramp(x, -2.4, 2.4),
-		ramp(dx_dt, -.5, .5),
+		ramp(dt_x, -.5, .5),
 		powRamp(theta, math.rad(6)),	-- bias in the middle:  -6,-1,0,1,6.  use power * sign
-		ramp(dtheta_dt, -math.rad(50), math.rad(50))
+		ramp(dt_theta, -math.rad(50), math.rad(50))
 	}
 end
 
@@ -197,7 +197,7 @@ local createNeuralNetwork = ({
 
 		local desc = DiscreteStateDescription()
 		getState = function(cart)
-			return desc:getState(cart.x, cart.dx_dt, cart.theta, cart.dtheta_dt)
+			return desc:getState(cart.x, cart.dt_x, cart.theta, cart.dt_theta)
 		end
 
 		return desc:createNeuralNetwork(
@@ -211,7 +211,7 @@ local createNeuralNetwork = ({
 
 		local desc = DiscreteStateDescription()
 		getState = function(cart)
-			return desc:getState(cart.x, cart.dx_dt, cart.theta, cart.dtheta_dt)
+			return desc:getState(cart.x, cart.dt_x, cart.theta, cart.dt_theta)
 		end
 
 		local rlnn = desc:createNeuralNetwork(desc.numStates, desc.numStates, desc.numActions)
@@ -234,7 +234,7 @@ local createNeuralNetwork = ({
 
 		local desc = ContinuousStateDescription()
 		getState = function(cart)
-			return desc:getState(cart.x, cart.dx_dt, cart.theta, cart.dtheta_dt)
+			return desc:getState(cart.x, cart.dt_x, cart.theta, cart.dt_theta)
 		end
 
 		local rlnn = desc:createNeuralNetwork(
@@ -259,7 +259,7 @@ local createNeuralNetwork = ({
 })[neuralNetworkMethod]
 
 local Cart = class()
-Cart.maxIterations = 100000
+Cart.successIterations = 100000
 Cart.maxFailures = 3000
 function Cart:init()
 	self.qnn = createNeuralNetwork()
@@ -269,12 +269,12 @@ end
 function Cart:reset()
 	if self.iteration then print(self.iteration) end
 	self.x = 0
-	self.dx_dt = 0
+	self.dt_x = 0
 	self.theta = (math.random() * 2 - 1) * math.rad(6)
-	self.dtheta_dt = 0
+	self.dt_theta = 0
 	self.iteration = 0
 end
-function Cart:performAction(state, action, actionQ)
+function Cart:performAction(action, actionQ, state)	-- 'action' is really all we want
 	-- step / performAction
 	local gravity = 9.8
 	local massCart = 1
@@ -285,22 +285,28 @@ function Cart:performAction(state, action, actionQ)
 	local forceMag = 20
 	local dt = .02
 
-	local force = ({-forceMag, 0, forceMag})[action]
+	local force = 0
+	if action == 1 then
+		force = -forceMag
+	elseif action == 3 then
+		force = forceMag
+	end
+
 	local cosTheta = math.cos(self.theta)
 	local sinTheta = math.sin(self.theta)
-	local temp = (force + poleMassLength * self.dtheta_dt * self.dtheta_dt * sinTheta) / totalMass
-	local d2theta_dt2 = (gravity * sinTheta - cosTheta * temp) / (length * (4./3. - massPole * cosTheta * cosTheta / totalMass))
-	local d2x_dt2 = temp - poleMassLength * d2theta_dt2 * cosTheta / totalMass
+	local temp = (force + poleMassLength * self.dt_theta * self.dt_theta * sinTheta) / totalMass
+	local d2t_theta = (gravity * sinTheta - cosTheta * temp) / (length * (4./3. - massPole * cosTheta * cosTheta / totalMass))
+	local d2t_x = temp - poleMassLength * d2t_theta * cosTheta / totalMass
 
-	self.x = self.x + dt * self.dx_dt
-	self.theta = self.theta + dt * self.dtheta_dt
-	self.dx_dt = self.dx_dt + dt * d2x_dt2
-	self.dtheta_dt = self.dtheta_dt + dt * d2theta_dt2
+	self.x = self.x + dt * self.dt_x
+	self.theta = self.theta + dt * self.dt_theta
+	self.dt_x = self.dt_x + dt * d2t_x
+	self.dt_theta = self.dt_theta + dt * d2t_theta
 end
 function Cart:getReward()
-	local toppled = self.theta < -math.rad(12) or self.theta > math.rad(12) or self.x < -2.4 or self.x > 2.4
-	local succeeded = self.iteration >= self.maxIterations
-	return toppled and -1 or .001, toppled or succeeded
+	local fail = self.theta < -math.rad(12) or self.theta > math.rad(12) or self.x < -2.4 or self.x > 2.4
+	local succeeded = self.iteration >= self.successIterations
+	return fail and -1 or .001, fail or succeeded
 end
 function Cart:step()
 	self.iteration = self.iteration + 1

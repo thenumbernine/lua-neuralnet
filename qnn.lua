@@ -22,44 +22,40 @@ This function is responsible for translating the state into neuron input signals
 This is the one function that has to be replaced if you are going to change state from an integer to anything else.
 --]]
 function QNN:feedForwardForState(state)
+	-- TODO high/low signal values?
 	for i=1,#self.nn.input do
-		self.nn.input[i] = i == state and 1 or 0
-		-- TODO high/low signal values?
+		self.nn.input[i] = 0
+	end
+	if 1 <= state and state <= #self.nn.input then
+		self.nn.input[state] = 1
 	end
 	self.nn:feedForward()
 end
 
-function QNN:getQs(state)
-	self:feedForwardForState(state)
-	return setmetatable({unpack(self.nn.output)}, table)
-end
-
 -- function QNN:getReward(state, action, nextState)
 -- function QNN:applyAction(state, action)
-function QNN:getBestAction(qs)
-	if math.random() < self.noise then
-		return math.random(#qs)
-	else
-		local best = table()
-		for i=1,#qs do
-			if #best == 0 or qs[i] > qs[best[1]] then
-				best = table{i}
-			elseif qs[i] == qs[best[1]] then
-				best:insert(i)
-			end
+function QNN:getBestAction(state, noise)
+	self:feedForwardForState(state)
+	local qs = self.nn.output
+	
+	noise = noise or self.noise or 0
+	local bestAction = 1
+	local bestValue = qs[1] + math.random() * noise
+	for i=2,#qs do
+		local checkValue = qs[i] + math.random() * noise
+		if bestValue < checkValue then
+			bestValue = checkValue
+			bestAction = i
 		end
-		-- TODO or number weighting or first-best
-		return best:pickRandom()
 	end
+	return bestAction, qs[bestAction]
 end
 
-function QNN:determineAction(state)
+function QNN:determineAction(state, noise)
 	-- S[t] is our current state, represented as 'state'
 
 	-- A[t] is our action for this state.  get it by getting the Q's of our current state, permuting them sightly, and picking the highest action
-	local thisQs = self:getQs(state)				-- Q(S[t], *)
-	local action = self:getBestAction(thisQs)		-- A[t]
-	local actionQ = thisQs[action]					-- Q(S[t], A[t])
+	local action, actionQ = self:getBestAction(state, noise)		-- A[t], Q(S[t], A[t])
 
 	self.lastState = state
 	self.lastAction = action
@@ -69,8 +65,7 @@ function QNN:determineAction(state)
 end
 
 function QNN:applyReward(newState, reward, lastState, lastAction, lastStateActionQ)
-	local nextQs = self:getQs(newState)		-- Q(S[t+1], *)
-	local maxNextQ = nextQs:sup()			-- max(Q(S[t+1], *))
+	local maxNextQ = select(2, self:getBestAction(newState, 0))			-- max(Q(S[t+1], *))
 
 	-- setup input for backpropagation
 	self:feedForwardForState(lastState)
@@ -86,10 +81,10 @@ end
 
 --[[
 controller provides:
+	:reset()
 	:getState()
 	:performAction()
 	:getReward()
-	:reset()
 --]]
 function QNN:step(controller)
 	-- calculate state based on cart parameters
@@ -104,7 +99,7 @@ function QNN:step(controller)
 	-- here means no need to store and test for lastAction anymore...
 	local action, actionQ = self:determineAction(state)
 
-	controller:performAction(state, action, actionQ)
+	controller:performAction(action, actionQ, state)
 	local newState = controller:getState()
 
 	-- determine reward and whether to reset
@@ -121,16 +116,18 @@ function QNN:step(controller)
 	return reward, reset
 end
 
+function QNN:getQs(state)
+	self:feedForwardForState(state)
+	return setmetatable({unpack(self.nn.output)}, table)
+end
+
 function QNN:__tostring()
-	local qs = table()
+	local qsForSs = table()
 	for i=1,#self.nn.input do
-		local lq, rq = unpack(self:getQs(i))
-		lq = ('%.2f'):format(lq)
-		rq = ('%.2f'):format(rq)
-		local q = lq..'/'..rq
-		qs:insert(q)
+		local qs = self:getQs(i)
+		qsForSs:insert(require 'ext.tolua'(qs))
 	end
-	return qs:concat(' ')
+	return qsForSs:concat(' ')
 end
 
 function QNN.__concat(a,b) return tostring(a) .. tostring(b) end

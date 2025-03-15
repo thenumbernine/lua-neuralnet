@@ -23,7 +23,7 @@ function QEnv:feedForwardForState(agent, state)
 	self.nn:feedForward()
 end
 
--- function QEnv:getReward(state, action, nextState)
+-- function QEnv:getReward(state, lastState)
 -- function QEnv:applyAction(state, action)
 function QEnv:determineAction(agent, state, noise)
 	-- determine our best action on the environment
@@ -93,7 +93,7 @@ function QEnv:step(agent, state)
 	local newState = agent:performAction(state, action, actionQ)
 
 	-- determine reward and whether to reset
-	local reward, reset = agent:getReward(newState)
+	local reward, reset = agent:getReward(newState, state)
 
 	--apply reward
 	-- applies reward with action as the A(S[t],*) and actionQ

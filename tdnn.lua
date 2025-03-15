@@ -1,19 +1,19 @@
-local QNN = require 'neuralnet.qnn'
+local QEnv = require 'neuralnet.qnn'
 local class = require 'ext.class'
 local table = require 'ext.table'
 
-local TDNN = class(QNN)
+local TDEnv = class(QEnv)
 
-TDNN.historySize = 10
-TDNN.lambda = .7
+TDEnv.historySize = 10
+TDEnv.lambda = .7
 
-function TDNN:init(...)
-	TDNN.super.init(self, ...)
+function TDEnv:init(...)
+	TDEnv.super.init(self, ...)
 	self.history = table()
 end
 
-function TDNN:determineAction(state, ...)
-	local action, actionQ = TDNN.super.determineAction(self, state, ...)
+function TDEnv:determineAction(agent, state, ...)
+	local action, actionQ = TDEnv.super.determineAction(self, agent, state, ...)
 	-- insert at the beginning
 	self.history:insert(1, {
 		state=state,
@@ -26,15 +26,15 @@ function TDNN:determineAction(state, ...)
 	return action, actionQ
 end
 
-function TDNN:applyReward(state, reward, ...)
-	local err = TDNN.super.applyReward(self, state, reward, ...)
+function TDEnv:applyReward(agent, state, reward, ...)
+	local err = TDEnv.super.applyReward(self, agent, state, reward, ...)
 
 	for i=2,#self.history do
-		-- damp the first -- it has already been applied in QNN:applyReward
+		-- damp the first -- it has already been applied in QEnv:applyReward
 		err = err * self.lambda
 
 		local history = self.history[i]
-		self:feedForwardForState(history.state)
+		self:feedForwardForState(agent, history.state)
 		for j=1,#self.nn.outputError do
 			self.nn.outputError[j] = 0
 		end
@@ -47,4 +47,4 @@ function TDNN:applyReward(state, reward, ...)
 	return err
 end
 
-return TDNN
+return TDEnv

@@ -5,11 +5,19 @@ adapted from http://pages.cs.wisc.edu/~finton/rlpage.html
 
 local class = require 'ext.class'
 local math = require 'ext.math'
-local gl = require 'gl'
-local GLApp = require 'glapp'
-local TDNN = require 'neuralnet.tdnn'
+local TDEnv = require 'neuralnet.tdnn'
 
 math.randomseed(os.time())
+
+
+local State = class()
+function State:init()
+	self.x = 0
+	self.dt_x = 0
+	self.theta = (math.random() * 2 - 1) * math.rad(6)
+	self.dt_theta = 0
+	self.iteration = 0
+end
 
 
 --[[
@@ -20,7 +28,7 @@ and used for providing input state object
 local StateDescription = class()
 
 function StateDescription:createNeuralNetwork(...)
-	local rlnn = TDNN(...)
+	local rlnn = TDEnv(...)
 	rlnn.alpha = .1
 	rlnn.gamma = .9
 	rlnn.noise = 0
@@ -74,7 +82,7 @@ DiscreteStateDescription.numStates =
 
 DiscreteStateDescription.numActions = 3
 
-function DiscreteStateDescription:getState(x, dt_x, theta, dt_theta)
+function DiscreteStateDescription:getStateIndex(x, dt_x, theta, dt_theta)
 	if x < -2.4 or x > 2.4
 	or theta < -math.rad(12)
 	or theta > math.rad(12)
@@ -151,7 +159,7 @@ function ContinuousStateDescription:createNeuralNetwork(...)
 		for i=1,#state do
 			self.nn.input[i] = state[i]
 		end
-		-- upload last action
+error "FIXME self.lastAction isn't stored anymore"
 		if self.lastAction then
 			for i=1,desc.numActions do
 				self.nn.input[i+#state] = self.lastAction == i and 1 or 0
@@ -161,12 +169,13 @@ function ContinuousStateDescription:createNeuralNetwork(...)
 				self.nn.input[i+#state] = 0
 			end
 		end
+		--]]
 		self.nn:feedForward()
 	end
 	return rlnn
 end
 
-function ContinuousStateDescription:getState(x, dt_x, theta, dt_theta)
+function ContinuousStateDescription:getStateIndex(x, dt_x, theta, dt_theta)
 	-- maps input signals to 0,1 range
 	local function ramp(x, min, max)
 		return math.clamp((x - min) / (max - min), 0, 1)
@@ -191,15 +200,15 @@ local neuralNetworkMethod = 'singleLayerDiscreteState'
 --local neuralNetworkMethod = 'multiLayerDiscreteState'
 --local neuralNetworkMethod = 'multiLayerContinuousState'
 
-local getState
+local getStateIndex
 local createNeuralNetwork = ({
 	-- typical q-learning.  no activation function, no hidden layer
 	-- discretize all possible states, the 'state' variable is the nn input is a spike at the current discrete state index
 	singleLayerDiscreteState = function()
 
 		local desc = DiscreteStateDescription()
-		getState = function(cart)
-			return desc:getState(cart.x, cart.dt_x, cart.theta, cart.dt_theta)
+		getStateIndex = function(agent, state)
+			return desc:getStateIndex(state.x, state.dt_x, state.theta, state.dt_theta)
 		end
 
 		return desc:createNeuralNetwork(
@@ -212,8 +221,8 @@ local createNeuralNetwork = ({
 	multiLayerDiscreteState = function()
 
 		local desc = DiscreteStateDescription()
-		getState = function(cart)
-			return desc:getState(cart.x, cart.dt_x, cart.theta, cart.dt_theta)
+		getStateIndex = function(agent, state)
+			return desc:getStateIndex(state.x, state.dt_x, state.theta, state.dt_theta)
 		end
 
 		local rlnn = desc:createNeuralNetwork(desc.numStates, desc.numStates, desc.numActions)
@@ -235,8 +244,8 @@ local createNeuralNetwork = ({
 	multiLayerContinuousState = function()
 
 		local desc = ContinuousStateDescription()
-		getState = function(cart)
-			return desc:getState(cart.x, cart.dt_x, cart.theta, cart.dt_theta)
+		getStateIndex = function(agent, state)
+			return desc:getStateIndex(state.x, state.dt_x, state.theta, state.dt_theta)
 		end
 
 		local rlnn = desc:createNeuralNetwork(
@@ -260,23 +269,31 @@ local createNeuralNetwork = ({
 	end,
 })[neuralNetworkMethod]
 
-local Cart = class()
-Cart.successIterations = 100000
-Cart.maxFailures = 3000
-function Cart:init()
+local Agent = class()
+Agent.successIterations = 100000
+Agent.maxFailures = 3000
+function Agent:init()
 	self.qnn = createNeuralNetwork()
-	Cart.getState = getState
-	self:reset()
+	Agent.getStateIndex = getStateIndex
+	self:resetState()
 end
-function Cart:reset()
-	if self.iteration then print(self.iteration) end
-	self.x = 0
-	self.dt_x = 0
-	self.theta = (math.random() * 2 - 1) * math.rad(6)
-	self.dt_theta = 0
-	self.iteration = 0
+function Agent:resetState()
+	if self.state then print(self.state.iteration) end
+	self.state = State()
+	return self.state
 end
-function Cart:performAction(action, actionQ, state)	-- 'action' is really all we want
+function Agent:observe(state)
+	local stateIndex = self:getStateIndex(state)
+
+	local nn = self.qnn.nn
+	for i=1,#nn.input do
+		nn.input[i] = 0
+	end
+	if 1 <= stateIndex and stateIndex <= #nn.input then
+		nn.input[stateIndex] = 1
+	end
+end
+function Agent:performAction(state, action, actionQ)	-- 'action' is really all we want
 	-- step / performAction
 	local gravity = 9.8
 	local massCart = 1
@@ -294,35 +311,39 @@ function Cart:performAction(action, actionQ, state)	-- 'action' is really all we
 		force = forceMag
 	end
 
-	local cosTheta = math.cos(self.theta)
-	local sinTheta = math.sin(self.theta)
-	local temp = (force + poleMassLength * self.dt_theta * self.dt_theta * sinTheta) / totalMass
+	local cosTheta = math.cos(state.theta)
+	local sinTheta = math.sin(state.theta)
+	local temp = (force + poleMassLength * state.dt_theta * state.dt_theta * sinTheta) / totalMass
 	local d2t_theta = (gravity * sinTheta - cosTheta * temp) / (length * (4./3. - massPole * cosTheta * cosTheta / totalMass))
 	local d2t_x = temp - poleMassLength * d2t_theta * cosTheta / totalMass
 
-	self.x = self.x + dt * self.dt_x
-	self.theta = self.theta + dt * self.dt_theta
-	self.dt_x = self.dt_x + dt * d2t_x
-	self.dt_theta = self.dt_theta + dt * d2t_theta
+	local newState = State()
+	newState.x = state.x + dt * state.dt_x
+	newState.theta = state.theta + dt * state.dt_theta
+	newState.dt_x = state.dt_x + dt * d2t_x
+	newState.dt_theta = state.dt_theta + dt * d2t_theta
+	newState.iteration = state.iteration + 1
+	return newState
 end
-function Cart:getReward()
-	local fail = self.theta < -math.rad(12) or self.theta > math.rad(12) or self.x < -2.4 or self.x > 2.4
-	local succeeded = self.iteration >= self.successIterations
+function Agent:getReward(state)
+	local fail = state.theta < -math.rad(12) or state.theta > math.rad(12) or state.x < -2.4 or state.x > 2.4
+	local succeeded = state.iteration >= self.successIterations
 	return fail and -1 or .001, fail or succeeded
 end
-function Cart:step()
-	self.iteration = self.iteration + 1
-	self.qnn:step(self)
+function Agent:step()
+	self.state = self.qnn:step(self, self.state)
 end
-local cart = Cart()
+local agent = Agent()
 
---[=[ gl ... needs to be fixed
+--[=[ gl display ... needs to be fixed
+local gl = require 'gl'
+local GLApp = require 'glapp'
 local CartPoleGLApp = GLApp:subclass()
 CartPoleGLApp.viewUseGLMatrixMode = true
 function CartPoleGLApp:update()
 	gl.glClear(gl.GL_COLOR_BUFFER_BIT)
 
-	cart:step()
+	agent:step()
 
 	local width, height = self:size()
 	local aspectRatio = width / height
@@ -338,12 +359,12 @@ function CartPoleGLApp:update()
 	gl.glPointSize(3)
 	gl.glColor3f(1,0,0)
 	gl.glBegin(gl.GL_POINTS)
-	gl.glVertex2f(cart.x, 0)
+	gl.glVertex2f(agent.state.x, 0)
 	gl.glEnd()
 	gl.glColor3f(1,1,0)
 	gl.glBegin(gl.GL_LINES)
-	gl.glVertex2f(cart.x, 0)
-	gl.glVertex2f(cart.x + math.sin(cart.theta), math.cos(cart.theta))
+	gl.glVertex2f(agent.state.x, 0)
+	gl.glVertex2f(agent.state.x + math.sin(agent.state.theta), math.cos(agent.state.theta))
 	gl.glEnd()
 
 	local function colorForQ(q)
@@ -353,14 +374,14 @@ function CartPoleGLApp:update()
 	gl.glTranslatef(-4, -2.5, 0)
 	gl.glScalef(.2, .2, .1)
 	gl.glBegin(gl.GL_QUADS)
-	if #cart.qnn.nn.w[1][1] == 3*3*6*3+1 then
+	if #agent.qnn.nn.w[1][1] == 3*3*6*3+1 then
 		for i=0,3-1 do
 			for j=0,3-1 do
 				for k=0,6-1 do
 					for l=0,3-1 do
 						for action=1,3 do
 							local state = 1 + i + 3 * (j + 3 * (k + 6 * l))
-							gl.glColor3f(colorForQ(cart.qnn.nn.w[1][action][state]))
+							gl.glColor3f(colorForQ(agent.qnn.nn.w[1][action][state]))
 							gl.glVertex2f(7*i + k + .2 * (action-1), 4*j + l)
 							gl.glVertex2f(7*i + k + .2 * (action-1 + .8), 4*j + l)
 							gl.glVertex2f(7*i + k + .2 * (action-1 + .8), 4*j + l+.9)
@@ -377,5 +398,5 @@ end
 return CartPoleGLApp():run()
 --]=]
 -- [=[ until then
-while true do cart:step() end
+while true do agent:step() end
 --]=]

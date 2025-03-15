@@ -1,43 +1,36 @@
 local ANN = require 'neuralnet.ann'
 local class = require 'ext.class'
 local table = require 'ext.table'
+local string = require 'ext.string'
 
 -- q-learner with NN impl
-local QNN = class()
+local QEnv = class()
 
-QNN.gamma = .9
-QNN.alpha = .5
-QNN.noise = .1
+QEnv.gamma = .9
+QEnv.alpha = .5
+QEnv.noise = .1
 
-function QNN:init(...)
-	local layerSizes = {...}
+function QEnv:init(...)
+	-- should nn go here or in agent?
 	self.nn = ANN(...)
 	-- TODO disable all biases?
 	-- TODO clear initial weights?
 	-- TODO use linear activation function?
 end
 
---[[
-This function is responsible for translating the state into neuron input signals.
-This is the one function that has to be replaced if you are going to change state from an integer to anything else.
---]]
-function QNN:feedForwardForState(state)
-	-- TODO high/low signal values?
-	for i=1,#self.nn.input do
-		self.nn.input[i] = 0
-	end
-	if 1 <= state and state <= #self.nn.input then
-		self.nn.input[state] = 1
-	end
+function QEnv:feedForwardForState(agent, state)
+	agent:observe(state)	-- convert 'state' into nn inputs
 	self.nn:feedForward()
 end
 
--- function QNN:getReward(state, action, nextState)
--- function QNN:applyAction(state, action)
-function QNN:getBestAction(state, noise)
-	self:feedForwardForState(state)
+-- function QEnv:getReward(state, action, nextState)
+-- function QEnv:applyAction(state, action)
+function QEnv:determineAction(agent, state, noise)
+	-- determine our best action on the environment
+	-- requires the actions to be discrete
+	self:feedForwardForState(agent, state)
 	local qs = self.nn.output
-	
+
 	noise = noise or self.noise or 0
 	local bestAction = 1
 	local bestValue = qs[1] + math.random() * noise
@@ -51,86 +44,77 @@ function QNN:getBestAction(state, noise)
 	return bestAction, qs[bestAction]
 end
 
-function QNN:determineAction(state, noise)
-	-- S[t] is our current state, represented as 'state'
-
-	-- A[t] is our action for this state.  get it by getting the Q's of our current state, permuting them sightly, and picking the highest action
-	local action, actionQ = self:getBestAction(state, noise)		-- A[t], Q(S[t], A[t])
-
-	self.lastState = state
-	self.lastAction = action
-	self.lastStateActionQ = actionQ
-
-	return action, actionQ
-end
-
-function QNN:applyReward(newState, reward, lastState, lastAction, lastStateActionQ)
-	local maxNextQ = select(2, self:getBestAction(newState, 0))			-- max(Q(S[t+1], *))
-
-	-- setup input for backpropagation
-	self:feedForwardForState(lastState)
-	for i=1,#self.nn.outputError do
-		self.nn.outputError[i] = 0
-	end
+function QEnv:applyReward(agent, newState, reward, lastState, lastAction, lastStateActionQ)
+	local nn = self.nn
+-- [[ setup input for backpropagation
+-- requires actions to be discrete
+	local maxNextQ = select(2, self:determineAction(agent, newState, 0))			-- max(Q(S[t+1], *))
 	local err = reward + self.gamma * maxNextQ - lastStateActionQ
-	self.nn.outputError[lastAction] = err
-	self.nn:backPropagate(self.alpha)
+	self:feedForwardForState(agent, lastState)
+	for i=1,#nn.outputError do
+		nn.outputError[i] = 0
+	end
+	nn.outputError[lastAction] = err
+--]]
+--[[ if the output is y_i = delta_ik for lastAction=k
+-- https://stats.stackexchange.com/a/187747
+-- nabla_w Q(s,a) = dQ/dw_ij ... Q is a vector ...
+-- y_i = sigma(w_ij x_j) ...
+-- dy/dw_ij = sigma'(w_ij x_j) * x_j
+-- 'outputError' is usually dE/dy_i for a scalar E, but we have no scalar E so ...
+-- ... but where is 'lastAction'? anywhere?
+-- but it still seems to work just fine.
+	local maxNextQ = select(2, self:determineAction(agent, newState, 0))			-- max(Q(S[t+1], *))
+	local err = reward + self.gamma * maxNextQ - lastStateActionQ
+	self:feedForwardForState(agent, lastState)
+	for i=1,#nn.outputError do
+		nn.outputError[i] = nn.output[i] * err
+	end
+--]]
+
+	nn:backPropagate(self.alpha)
 
 	return err
 end
 
 --[[
-controller provides:
-	:reset()
-	:getState()
+agent provides:
+	:resetState()
 	:performAction()
 	:getReward()
 --]]
-function QNN:step(controller)
-	-- calculate state based on cart parameters
-	--  to be used for reinforcement and for determining next action
-	-- ok 'self' really is the state
-	-- while 'state' is the underlying neural network's representation of the state
-	local state = controller:getState()
+function QEnv:step(agent, state)
+	-- state = S[t] is our current state
 
 	-- determine next action.
-	-- this also saves it as 'lastAction' and its Q-value as 'lastStateActionQ' for the next 'applyReward'
-	-- should this go here or only after the failed condition?
-	-- here means no need to store and test for lastAction anymore...
-	local action, actionQ = self:determineAction(state)
+	local action, actionQ = self:determineAction(agent, state)		-- A[t], Q(S[t], A[t])
+	-- action = A[t] is our action for this state.  get it by getting the Q's of our current state, permuting them sightly, and picking the highest action
 
-	controller:performAction(action, actionQ, state)
-	local newState = controller:getState()
+	local newState = agent:performAction(state, action, actionQ)
 
 	-- determine reward and whether to reset
-	local reward, reset = controller:getReward()
+	local reward, reset = agent:getReward(newState)
 
 	--apply reward
-	-- applies reward with qnn.lastAction as the A(S[t],*) and lastActionQ
-	self:applyReward(newState, reward, state, action, actionQ)
+	-- applies reward with action as the A(S[t],*) and actionQ
+	self:applyReward(agent, newState, reward, state, action, actionQ)
 
 	if reset then
 		self.history = table()
-		controller:reset()
+		newState = agent:resetState()
 	end
 
-	return reward, reset
+	return newState, reward, reset
 end
 
-function QNN:getQs(state)
-	self:feedForwardForState(state)
-	return setmetatable({unpack(self.nn.output)}, table)
-end
-
-function QNN:__tostring()
+function QEnv:__tostring()
 	local qsForSs = table()
-	for i=1,#self.nn.input do
-		local qs = self:getQs(i)
-		qsForSs:insert(require 'ext.tolua'(qs))
+	for i,w in ipairs(self.nn.w) do
+		qsForSs:insert(require 'ext.tolua'(w))
 	end
 	return qsForSs:concat(' ')
 end
 
-function QNN.__concat(a,b) return tostring(a) .. tostring(b) end
+QEnv.__concat = string.concat
 
-return QNN
+return QEnv

@@ -348,6 +348,7 @@ in vec3 vertex;
 uniform mat4 mvProjMat;
 void main() {
 	gl_Position = mvProjMat * vec4(vertex, 1.);
+	gl_PointSize = 3.;
 }
 ]],
 			fragmentCode = [[
@@ -389,7 +390,6 @@ function CartPoleGLApp:update()
 	local width, height = self:size()
 	local aspectRatio = width / height
 
-	gl.glPointSize(3)
 	solidSceneObj.geometry.mode = gl.GL_POINTS
 	solidSceneObj.uniforms.color = {1,0,0,1}
 	local vtxs = solidSceneObj:beginUpdate()

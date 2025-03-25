@@ -337,12 +337,11 @@ local agent = Agent()
 
 -- [=[ gl display
 local gl = require 'gl'
-local GLProgram = require 'gl.program'
 local GLSceneObject = require 'gl.sceneobject'
 local GLApp = require 'glapp'
 local CartPoleGLApp = require 'glapp.view'.apply(GLApp)
 function CartPoleGLApp:initGL()
-	local solidProgram = GLProgram{
+	local solidProgram = require 'gl.program'{
 		version = 'latest',
 		precision = 'best',
 		vertexCode = [[
@@ -361,10 +360,10 @@ void main() {
 ]],
 	}:useNone()
 
-	solidPoints = GLSceneObject{
+	solidSceneObj = GLSceneObject{
 		program = solidProgram,
 		geometry = {
-			mode = gl.GL_POINTS,
+			mode = gl.GL_TRIANGLES,	-- will swap this
 		},
 		vertexes = {
 			type = gl.GL_FLOAT,
@@ -373,36 +372,7 @@ void main() {
 		},
 		uniforms = {
 			color = {1,1,1,1},
-		},
-	}
-
-	solidLines = GLSceneObject{
-		program = solidProgram,
-		geometry = {
-			mode = gl.GL_LINE_STRIP,
-		},
-		vertexes = {
-			type = gl.GL_FLOAT,
-			dim = 3,
-			useVec = true,
-		},
-		uniforms = {
-			color = {1,1,1,1},
-		},
-	}
-
-	solidTris = GLSceneObject{
-		program = solidProgram,
-		geometry = {
-			mode = gl.GL_TRIANGLES,
-		},
-		vertexes = {
-			type = gl.GL_FLOAT,
-			dim = 3,
-			useVec = true,
-		},
-		uniforms = {
-			color = {1,1,1,1},
+			mvProjMat = self.view.mvProjMat.ptr,
 		},
 	}
 
@@ -412,10 +382,6 @@ void main() {
 	self.view.zfar = 1
 	self.view.pos:set(0,0,0)
 	self.view.angle:set(0,0,0,1)
-
-	solidPoints.uniforms.mvProjMat = self.view.mvProjMat.ptr
-	solidLines.uniforms.mvProjMat = self.view.mvProjMat.ptr
-	solidTris.uniforms.mvProjMat = self.view.mvProjMat.ptr
 end
 function CartPoleGLApp:update()
 	local view = self.view
@@ -428,23 +394,26 @@ function CartPoleGLApp:update()
 	local aspectRatio = width / height
 
 	gl.glPointSize(3)
-	solidPoints.uniforms.color = {1,0,0,1}
-	local vtxs = solidPoints:beginUpdate()
+	solidSceneObj.geometry.mode = gl.GL_POINTS
+	solidSceneObj.uniforms.color = {1,0,0,1}
+	local vtxs = solidSceneObj:beginUpdate()
 	vtxs:emplace_back():set(agent.state.x, 0, 0)
-	solidPoints:endUpdate()
+	solidSceneObj:endUpdate()
 
-	solidLines.uniforms.color = {1,1,0,1}
-	local vtxs = solidLines:beginUpdate()
+	solidSceneObj.geometry.mode = gl.GL_LINES
+	solidSceneObj.uniforms.color = {1,1,0,1}
+	local vtxs = solidSceneObj:beginUpdate()
 	vtxs:emplace_back():set(agent.state.x, 0, 0)
 	vtxs:emplace_back():set(agent.state.x + math.sin(agent.state.theta), math.cos(agent.state.theta), 0)
-	solidLines:endUpdate()
+	solidSceneObj:endUpdate()
 
 	local function colorForQ(q)
 		return .5 + math.max(0,q), .5, .5 - math.min(0,q), 1
 	end
-	view.mvMat:applyTranslate(-4, -2.5, 0)
+	view.mvMat:applyTranslate(-2, -2.5, 0)
 	view.mvMat:applyScale(.2, .2, .1)
 	view.mvProjMat:mul4x4(view.projMat, view.mvMat)
+	solidSceneObj.geometry.mode = gl.GL_TRIANGLES
 	if #agent.qnn.nn.w[1][1] == 3*3*6*3+1 then
 		for i=0,3-1 do
 			for j=0,3-1 do
@@ -452,8 +421,8 @@ function CartPoleGLApp:update()
 					for l=0,3-1 do
 						for action=1,3 do
 							local state = 1 + i + 3 * (j + 3 * (k + 6 * l))
-							solidTris.uniforms.color = {colorForQ(agent.qnn.nn.w[1][action][state])}
-							local vtxs = solidTris:beginUpdate()
+							solidSceneObj.uniforms.color = {colorForQ(agent.qnn.nn.w[1][action][state])}
+							local vtxs = solidSceneObj:beginUpdate()
 							vtxs:emplace_back():set(7*i + k + .2 * (action-1), 4*j + l, 0)
 							vtxs:emplace_back():set(7*i + k + .2 * (action-1 + .8), 4*j + l, 0)
 							vtxs:emplace_back():set(7*i + k + .2 * (action-1 + .8), 4*j + l+.9, 0)
@@ -461,7 +430,7 @@ function CartPoleGLApp:update()
 							vtxs:emplace_back():set(7*i + k + .2 * (action-1 + .8), 4*j + l+.9, 0)
 							vtxs:emplace_back():set(7*i + k + .2 * (action-1), 4*j + l+.9, 0)
 							vtxs:emplace_back():set(7*i + k + .2 * (action-1), 4*j + l, 0)
-							solidTris:endUpdate()
+							solidSceneObj:endUpdate()
 						end
 					end
 				end
@@ -471,6 +440,6 @@ function CartPoleGLApp:update()
 end
 return CartPoleGLApp():run()
 --]=]
---[=[ until then
+--[=[ cli
 while true do agent:step() end
 --]=]

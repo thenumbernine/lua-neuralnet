@@ -337,31 +337,27 @@ local agent = Agent()
 
 -- [=[ gl display
 local gl = require 'gl'
-local GLSceneObject = require 'gl.sceneobject'
-local GLApp = require 'glapp'
-local CartPoleGLApp = require 'glapp.view'.apply(GLApp)
+local CartPoleGLApp = require 'glapp.view'.apply(require 'glapp')
 function CartPoleGLApp:initGL()
-	local solidProgram = require 'gl.program'{
-		version = 'latest',
-		precision = 'best',
-		vertexCode = [[
+	solidSceneObj = require 'gl.sceneobject'{
+		program = {
+			version = 'latest',
+			precision = 'best',
+			vertexCode = [[
 in vec3 vertex;
 uniform mat4 mvProjMat;
 void main() {
 	gl_Position = mvProjMat * vec4(vertex, 1.);
 }
 ]],
-		fragmentCode = [[
+			fragmentCode = [[
 out vec4 fragColor;
 uniform vec4 color;
 void main() {
 	fragColor = color;
 }
 ]],
-	}:useNone()
-
-	solidSceneObj = GLSceneObject{
-		program = solidProgram,
+		},
 		geometry = {
 			mode = gl.GL_TRIANGLES,	-- will swap this
 		},

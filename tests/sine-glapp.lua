@@ -4,7 +4,6 @@ ok so after complex_mul's sucess, now to try to piecewise approximate a sine wav
 --]]
 local ffi = require 'ffi'
 local gl = require 'gl'
-local GLSceneObject = require 'gl.sceneobject'
 local ANN = require 'neuralnet.ann'
 
 local App = require 'imguiapp.withorbit'()
@@ -15,9 +14,12 @@ local n = 1000
 
 function App:initGL()
 	App.super.initGL(self)
-	nn = ANN(1,10,1)
+	nn = ANN(1,8,1)
+	nn.useBatch = 10
+	nn:setActivation'poorQuadraticTanh'
+	nn:setActivationDeriv'poorQuadraticTanhDeriv'
 
---[[
+-- [[
 	self.view.ortho = true
 	self.view.orthoSize = 3
 	local xc = .5 * (xmin + xmax)	
@@ -25,54 +27,35 @@ function App:initGL()
 	self.view.pos:set(xc,0,10)
 --]]
 
-	local shader = require 'gl.program'{
-		version = 'latest',
-		precision = 'best',
-		vertexCode = [[
+	self.lineSceneObj = require 'gl.sceneobject'{
+		program = {
+			version = 'latest',
+			precision = 'best',
+			vertexCode = [[
 in vec2 vertex;
-in mat4 mvProjMat;
+uniform mat4 mvProjMat;
 void main() {
 	gl_Position = mvProjMat * vec4(vertex, 0., 1.);
 }
 ]],
-		fragmentCode = [[
+			fragmentCode = [[
 out vec4 fragColor;
 uniform vec3 color;
 void main() {
 	fragColor = vec4(color, 1.);
 }
 ]],
-	}
-
-	self.ySceneObj = GLSceneObject{
-		program = shader,
+		},
 		geometry = {
 			mode = gl.GL_LINE_STRIP,
-			count = n,
 		},
 		uniforms = {
 			color = {1,0,0},
+			mvProjMat = self.view.mvProjMat.ptr,
 		},
 		vertexes = {
 			useVec = true,
 			dim = 2,
-			count = n,
-		},
-	}
-
-	self.fSceneObj = GLSceneObject{
-		program = shader,
-		geometry = {
-			mode = gl.GL_LINE_STRIP,
-			count = n,
-		},
-		uniforms = {
-			color = {0,1,0},
-		},
-		vertexes = {
-			useVec = true,
-			dim = 2,
-			count = n,
 		},
 	}
 end
@@ -87,29 +70,28 @@ function App:update()
 	nn.desired[1] = f(t)
 	local err = nn:calcError()
 	--results:insert(err)
-	nn:backPropagate(.1)
+	nn:backPropagate(.1 / nn.useBatch)
 
-	self.ySceneObj.uniforms.mvProjMat = self.view.mvProjMat.ptr
-	local vec = self.ySceneObj:beginUpdate()
+	self.lineSceneObj.uniforms.color = {1,0,0}
+	local vec = self.lineSceneObj:beginUpdate()
 	for i=0,n-1 do
 		local x = (i+.5)/n * (xmax - xmin) + xmin
 		nn.input[1] = x
 		nn:feedForward()
 		local y = nn.output[1]
-		vec.v[i].x = x
-		vec.v[i].y = y
+		vec:emplace_back():set(x, y)
 	end
-	self.ySceneObj:endUpdate()
+	self.lineSceneObj:endUpdate()
 
-	self.fSceneObj.uniforms.mvProjMat = self.view.mvProjMat.ptr
-	local vec = self.fSceneObj:beginUpdate()
+	self.lineSceneObj.uniforms.color = {0,1,0}
+	local vec = self.lineSceneObj:beginUpdate()
 	for i=0,n-1 do
 		local x = (i+.5)/n * (xmax - xmin) + xmin
-		vec.v[i].x = x
-		vec.v[i].y = f(x)
+		vec:emplace_back():set(x, f(x))
 	end
-	self.fSceneObj:endUpdate()
+	self.lineSceneObj:endUpdate()
 
 	App.super.update(self)
 end
+
 return App():run()

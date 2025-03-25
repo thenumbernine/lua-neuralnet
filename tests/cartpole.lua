@@ -335,12 +335,91 @@ function Agent:step()
 end
 local agent = Agent()
 
---[=[ gl display ... needs to be fixed
+-- [=[ gl display
 local gl = require 'gl'
+local GLProgram = require 'gl.program'
+local GLSceneObject = require 'gl.sceneobject'
 local GLApp = require 'glapp'
-local CartPoleGLApp = GLApp:subclass()
-CartPoleGLApp.viewUseGLMatrixMode = true
+local CartPoleGLApp = require 'glapp.view'.apply(GLApp)
+function CartPoleGLApp:initGL()
+	local solidProgram = GLProgram{
+		version = 'latest',
+		precision = 'best',
+		vertexCode = [[
+in vec3 vertex;
+uniform mat4 mvProjMat;
+void main() {
+	gl_Position = mvProjMat * vec4(vertex, 1.);
+}
+]],
+		fragmentCode = [[
+out vec4 fragColor;
+uniform vec4 color;
+void main() {
+	fragColor = color;
+}
+]],
+	}:useNone()
+
+	solidPoints = GLSceneObject{
+		program = solidProgram,
+		geometry = {
+			mode = gl.GL_POINTS,
+		},
+		vertexes = {
+			type = gl.GL_FLOAT,
+			dim = 3,
+			useVec = true,
+		},
+		uniforms = {
+			color = {1,1,1,1},
+		},
+	}
+
+	solidLines = GLSceneObject{
+		program = solidProgram,
+		geometry = {
+			mode = gl.GL_LINE_STRIP,
+		},
+		vertexes = {
+			type = gl.GL_FLOAT,
+			dim = 3,
+			useVec = true,
+		},
+		uniforms = {
+			color = {1,1,1,1},
+		},
+	}
+
+	solidTris = GLSceneObject{
+		program = solidProgram,
+		geometry = {
+			mode = gl.GL_TRIANGLES,
+		},
+		vertexes = {
+			type = gl.GL_FLOAT,
+			dim = 3,
+			useVec = true,
+		},
+		uniforms = {
+			color = {1,1,1,1},
+		},
+	}
+
+	self.view.ortho = true
+	self.view.orthoSize = 3
+	self.view.znear = -1
+	self.view.zfar = 1
+	self.view.pos:set(0,0,0)
+	self.view.angle:set(0,0,0,1)
+
+	solidPoints.uniforms.mvProjMat = self.view.mvProjMat.ptr
+	solidLines.uniforms.mvProjMat = self.view.mvProjMat.ptr
+	solidTris.uniforms.mvProjMat = self.view.mvProjMat.ptr
+end
 function CartPoleGLApp:update()
+	local view = self.view
+	view:setup(self.width / self.height)
 	gl.glClear(gl.GL_COLOR_BUFFER_BIT)
 
 	agent:step()
@@ -348,32 +427,24 @@ function CartPoleGLApp:update()
 	local width, height = self:size()
 	local aspectRatio = width / height
 
-	gl.glMatrixMode(gl.GL_PROJECTION)
-	gl.glLoadIdentity()
-	local scale = 3
-	gl.glOrtho(-aspectRatio * scale, aspectRatio * scale, -scale, scale, -1, 1)
-
-	gl.glMatrixMode(gl.GL_MODELVIEW)
-	gl.glLoadIdentity()
-
 	gl.glPointSize(3)
-	gl.glColor3f(1,0,0)
-	gl.glBegin(gl.GL_POINTS)
-	gl.glVertex2f(agent.state.x, 0)
-	gl.glEnd()
-	gl.glColor3f(1,1,0)
-	gl.glBegin(gl.GL_LINES)
-	gl.glVertex2f(agent.state.x, 0)
-	gl.glVertex2f(agent.state.x + math.sin(agent.state.theta), math.cos(agent.state.theta))
-	gl.glEnd()
+	solidPoints.uniforms.color = {1,0,0,1}
+	local vtxs = solidPoints:beginUpdate()
+	vtxs:emplace_back():set(agent.state.x, 0, 0)
+	solidPoints:endUpdate()
+
+	solidLines.uniforms.color = {1,1,0,1}
+	local vtxs = solidLines:beginUpdate()
+	vtxs:emplace_back():set(agent.state.x, 0, 0)
+	vtxs:emplace_back():set(agent.state.x + math.sin(agent.state.theta), math.cos(agent.state.theta), 0)
+	solidLines:endUpdate()
 
 	local function colorForQ(q)
-		return .5 + math.max(0,q), .5, .5 - math.min(0,q)
+		return .5 + math.max(0,q), .5, .5 - math.min(0,q), 1
 	end
-	gl.glPushMatrix()
-	gl.glTranslatef(-4, -2.5, 0)
-	gl.glScalef(.2, .2, .1)
-	gl.glBegin(gl.GL_QUADS)
+	view.mvMat:applyTranslate(-4, -2.5, 0)
+	view.mvMat:applyScale(.2, .2, .1)
+	view.mvProjMat:mul4x4(view.projMat, view.mvMat)
 	if #agent.qnn.nn.w[1][1] == 3*3*6*3+1 then
 		for i=0,3-1 do
 			for j=0,3-1 do
@@ -381,22 +452,25 @@ function CartPoleGLApp:update()
 					for l=0,3-1 do
 						for action=1,3 do
 							local state = 1 + i + 3 * (j + 3 * (k + 6 * l))
-							gl.glColor3f(colorForQ(agent.qnn.nn.w[1][action][state]))
-							gl.glVertex2f(7*i + k + .2 * (action-1), 4*j + l)
-							gl.glVertex2f(7*i + k + .2 * (action-1 + .8), 4*j + l)
-							gl.glVertex2f(7*i + k + .2 * (action-1 + .8), 4*j + l+.9)
-							gl.glVertex2f(7*i + k + .2 * (action-1), 4*j + l+.9)
+							solidTris.uniforms.color = {colorForQ(agent.qnn.nn.w[1][action][state])}
+							local vtxs = solidTris:beginUpdate()
+							vtxs:emplace_back():set(7*i + k + .2 * (action-1), 4*j + l, 0)
+							vtxs:emplace_back():set(7*i + k + .2 * (action-1 + .8), 4*j + l, 0)
+							vtxs:emplace_back():set(7*i + k + .2 * (action-1 + .8), 4*j + l+.9, 0)
+
+							vtxs:emplace_back():set(7*i + k + .2 * (action-1 + .8), 4*j + l+.9, 0)
+							vtxs:emplace_back():set(7*i + k + .2 * (action-1), 4*j + l+.9, 0)
+							vtxs:emplace_back():set(7*i + k + .2 * (action-1), 4*j + l, 0)
+							solidTris:endUpdate()
 						end
 					end
 				end
 			end
 		end
 	end
-	gl.glEnd()
-	gl.glPopMatrix()
 end
 return CartPoleGLApp():run()
 --]=]
--- [=[ until then
+--[=[ until then
 while true do agent:step() end
 --]=]

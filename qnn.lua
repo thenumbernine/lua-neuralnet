@@ -2,6 +2,7 @@ local ANN = require 'neuralnet.ann'
 local class = require 'ext.class'
 local table = require 'ext.table'
 local string = require 'ext.string'
+local math = require 'ext.math'
 
 -- q-learner with NN impl
 local QEnv = class()
@@ -30,17 +31,23 @@ function QEnv:determineAction(agent, state, noise)
 	-- requires the actions to be discrete
 	self:feedForwardForState(agent, state)
 	local qs = self.nn.output
+--print(table.concat(qs, ', '))
 
 	noise = noise or self.noise or 0
 	local bestAction = 1
+	--local bestActions = setmetatable({1}, table)
 	local bestValue = qs[1] + math.random() * noise
+--DEBUG:assert(math.isfinite(bestValue))
 	for i=2,#qs do
 		local checkValue = qs[i] + math.random() * noise
+--DEBUG:assert(math.isfinite(checkValue))
 		if bestValue < checkValue then
 			bestValue = checkValue
 			bestAction = i
+			--bestActions:insert(i)
 		end
 	end
+	--local bestAction = bestActions:pickRandom()
 	return bestAction, qs[bestAction]
 end
 

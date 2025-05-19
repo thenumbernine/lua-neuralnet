@@ -1,0 +1,33 @@
+name = "neuralnet"
+files = {
+	["README.md"] = "neuralnet/README.md",
+	["activation.lua"] = "neuralnet/activation.lua",
+	["ann-cpp.lua"] = "neuralnet/ann-cpp.lua",
+	["ann-ffi.lua"] = "neuralnet/ann-ffi.lua",
+	["ann.lua"] = "neuralnet/ann.lua",
+	["qnn.lua"] = "neuralnet/qnn.lua",
+	["tdnn.lua"] = "neuralnet/tdnn.lua",
+	["tests/accuracy.lua"] = "neuralnet/tests/accuracy.lua",
+	["tests/cartpole.lua"] = "neuralnet/tests/cartpole.lua",
+	["tests/complex_mul.lua"] = "neuralnet/tests/complex_mul.lua",
+	["tests/mul.lua"] = "neuralnet/tests/mul.lua",
+	["tests/performance.gnuplot"] = "neuralnet/tests/performance.gnuplot",
+	["tests/performance.lua"] = "neuralnet/tests/performance.lua",
+	["tests/performance.svg"] = "neuralnet/tests/performance.svg",
+	["tests/performance.txt"] = "neuralnet/tests/performance.txt",
+	["tests/poker.lua"] = "neuralnet/tests/poker.lua",
+	["tests/randomwalk.lua"] = "neuralnet/tests/randomwalk.lua",
+	["tests/sine-glapp.lua"] = "neuralnet/tests/sine-glapp.lua",
+	["tests/sine.lua"] = "neuralnet/tests/sine.lua",
+	["tests/tictactoe.lua"] = "neuralnet/tests/tictactoe.lua",
+	["tests/xor.lua"] = "neuralnet/tests/xor.lua",
+}
+deps = {
+	"ext",
+	"ffi",
+	"gl",
+	"glapp",
+	"gnuplot",
+	"imgui",
+	"matrix",
+}

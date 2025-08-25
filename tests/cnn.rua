@@ -1,0 +1,134 @@
+#!/usr/bin/env rua
+-- I have honestly never read any convolutional neural net papers in enough detail to know the algorithm, just heard it described enough times, so here goes, probably wrong.
+
+--local ANN = require 'neuralnet.ann'
+--local ANN = require 'neuralnet.ann-ffi'
+local ANN = require 'neuralnet.ann-cpp'('NeuralNet::ANN<double>')--, 'nospeedhacks')	-- hmm doesn't match ...
+local Image = require 'image'
+
+local srcFilename, dstFilename, outWidth, outHeight = ...
+outWidth = tonumber(outWidth)
+outHeight = tonumber(outHeight)
+assert(srcFilename and dstFilename and outWidth and outHeight, "expected args: input-filename output-filename output-width output-height")
+
+local srcImg = Image(srcFilename):setFormat'double'
+local numCh = srcImg.channels
+
+-- convolution kernel size
+local cw = cmdline.kernelSize or cmdline.kernelWidth or 3
+local ch = cmdline.kernelSize or cmdline.kernelHeight or 3
+local ofsx = math.floor(cw/2)
+local ofsy = math.floor(ch/2)
+local nn = ANN(
+	-- input:
+	cw * ch * numCh, 
+	-- hidden options:
+	--20,
+	100, 100, 100,
+	-- output:
+	numCh
+)
+--nn:setActivation'sigmoid'
+--nn:setActivationDeriv'sigmoidDeriv'
+nn.useBatch = cmdline.useBatch and #nn.input  -- TODO possibly to prevent leading pixels having more influence
+nn.dropout = cmdline.dropout	-- 1
+nn.dilution = cmdline.dilution	-- 1
+nn.dt = (cmdline.dt or .1) / (nn.useBatch or 1)
+
+local trainingIters = cmdline.trainingIters or 1
+for iter=1,trainingIters do
+print('training pass', iter)
+	for y=0,srcImg.height-1 do
+		for x=0,srcImg.width-1 do
+			local inputIndex = 1
+			for cy=0,ch-1 do
+				for cx=0,cw-1 do
+					local srcx = x + cx - ofsx
+					local srcy = y + cy - ofsy
+					if srcx >= 0 and srcx < srcImg.width
+					and srcy >= 0 and srcy < srcImg.height
+					then
+						for ch=0,numCh-1 do
+							nn.input[inputIndex] = 
+								srcImg.buffer[ch + numCh * (srcx + srcImg.width * srcy)]
+								* 2 - 1
+							inputIndex += 1
+						end
+					else
+						-- TODO options.  wrap? clamp? solid color?
+						for ch=0,numCh-1 do
+							nn.input[inputIndex] = 
+								math.random()
+								* 2 - 1
+							inputIndex += 1
+						end
+					end
+				end
+			end
+			nn:feedForward()
+			for ch=0,numCh-1 do
+				nn.desired[ch+1] = 
+					srcImg.buffer[ch + numCh * (x + srcImg.width * y)]
+					* 2 - 1
+			end
+			local err = nn:calcError()
+			nn:backPropagate()
+		end
+	end
+end
+print('training done')
+
+-- trained on the image, now spit out the results:
+-- 1) initialize noise
+-- 2) feed in the noise input, set the pixel to the noise output.
+-- 3) stop when? max iter? min convergence?
+local dstImg = Image(outWidth, outHeight, numCh, 'double')
+local nextDstImg = dstImg:clone()
+for i=0,dstImg.width*dstImg.height*numCh-1 do
+	dstImg.buffer[i] = 
+		math.random()
+		* 2 - 1
+end
+
+local convergeIters = cmdline.convergeIters or 1
+for iter=1,convergeIters do
+print('converge pass', iter)
+	for y=0,dstImg.height-1 do
+		for x=0,dstImg.width-1 do
+			local inputIndex = 1
+			for cy=0,ch-1 do
+				for cx=0,cw-1 do
+					local srcx = x + cx - ofsx
+					local srcy = y + cy - ofsy
+					if srcx >= 0 and srcx < dstImg.width
+					and srcy >= 0 and srcy < dstImg.height
+					then
+						for ch=0,numCh-1 do
+							nn.input[inputIndex] = 
+								dstImg.buffer[ch + numCh * (srcx + dstImg.width * srcy)]
+								* 2 - 1
+							inputIndex += 1
+						end
+					else
+						-- TODO options.  wrap? clamp? solid color?
+						for ch=0,numCh-1 do
+							nn.input[inputIndex] = 
+								math.random()
+								* 2 - 1
+							inputIndex += 1
+						end
+					end
+				end
+			end
+			nn:feedForward()
+			for ch=0,numCh-1 do
+				nextDstImg.buffer[ch + numCh * (x + dstImg.width * y)] = 
+					nn.output[ch+1]
+			end
+		end
+	end
+	dstImg, nextDstImg = nextDstImg, dstImg
+end
+print('converge done')
+
+dstImg:save(dstFilename)

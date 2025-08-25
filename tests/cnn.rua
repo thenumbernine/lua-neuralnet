@@ -93,6 +93,7 @@ end
 local convergeIters = cmdline.convergeIters or 1
 for iter=1,convergeIters do
 print('converge pass', iter)
+	local res = 0
 	for y=0,dstImg.height-1 do
 		for x=0,dstImg.width-1 do
 			local inputIndex = 1
@@ -122,11 +123,15 @@ print('converge pass', iter)
 			end
 			nn:feedForward()
 			for ch=0,numCh-1 do
-				nextDstImg.buffer[ch + numCh * (x + dstImg.width * y)] = 
-					nn.output[ch+1]
+				local i = ch + numCh * (x + dstImg.width * y)
+				local y = nn.output[ch+1]
+				local dy = y - dstImg.buffer[i]
+				res += math.abs(dy)
+				nextDstImg.buffer[i] = y
 			end
 		end
 	end
+print('...has residual', res / (outWidth * outHeight * numCh))
 	dstImg, nextDstImg = nextDstImg, dstImg
 end
 print('converge done')
